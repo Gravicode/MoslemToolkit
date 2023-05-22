@@ -1,0 +1,175 @@
+﻿@page "/master/Aset"
+
+@inject IJSRuntime jsRuntime
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+
+@inject NavigationManager NavMgr
+@*@namespace MoslemToolkit.Pages.Master*@
+@inject IToastService toastService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@using System.IO
+<h1>Daftar Aset Sabilillah</h1>
+
+<p>Gunakan halaman ini untuk mengorganisasi aset sabilillah.</p>
+
+@if (DataAset == null)
+{
+<p><em>Loading...</em></p>
+}
+else
+{
+
+<body onbeforeunload="TestDataTablesRemove('#gridData')">
+    <div class="table-responsive">
+        <table id="gridData" name="gridData" class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Kode</th>
+                    <th>Nama</th>
+                    <th>Lokasi</th>
+                    <th>Kondisi</th>
+                    <th>Cara Perolehan</th>
+                    <th>Tanggal Diterima</th>
+                    <th>Actions</th>
+                </tr>
+
+            </thead>
+            <tbody>
+                @foreach (var item in DataAset)
+                    {
+                <tr>
+                    <td>@item.KodeBarang</td>
+                    <td>@item.NamaBarang</td>
+                    <td>@item.Lokasi</td>
+                    <td>@item.Kondisi</td>
+                    <td>@item.CaraPerolehan</td>
+                    <td>@item.TanggalPerolehan.ToString("yyyy-MM-dd")</td>
+                    <td>
+
+                        <input type="button" class="btn btn-primary" @onclick="(() => PrepareForEdit(item))" data-toggle="modal" data-target="#taskModal" value="Ubah" />
+                        <input type="button" class="btn btn-danger" @onclick="(() => PrepareForDelete(item))" data-toggle="modal" data-target="#confirmDeleteModal" value="Hapus" />
+
+                        <input type="button" class="btn btn-info" @onclick="(() => ViewQR(item))" value="QR Code" />
+
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</body>
+}
+<div>
+    <input type="button" data-toggle="modal" data-target="#taskModal" class="btn btn-primary" value="Tambah Aset" @onclick="(() => InitializeitemObject())" />
+</div>
+<ConfirmDialog OnClick="@Delete" />
+<AsetDetail @ref="detail" TaskObject=@itemObject DataChanged="@DataChanged">
+    <CustomHeader>@customHeader</CustomHeader>
+</AsetDetail>
+
+@code {
+    AsetDetail detail;
+    MoslemToolkit.Data.AsetService service;
+    string customHeader = string.Empty;
+    List<Aset> DataAset;
+    Aset itemObject = new Aset();
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    string UserName;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new AsetService();
+
+        DataAset = service.GetAllData();
+
+
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (DataAset != null && DataAset.Count > 0)
+        {
+
+            await jsRuntime.InvokeAsync<object>("TestDataTablesAdd", "#gridData");
+        }
+         if (firstRender){
+            if (string.IsNullOrEmpty(UserName))
+            {
+                try
+                {
+                    UserName = await localStorage.GetItemAsync<string>(AppConstants.NameKey);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+                if (string.IsNullOrEmpty(UserName))
+                {
+                    NavMgr.NavigateTo($"/login");
+                }
+                else
+                {
+
+                }
+            }
+        }
+    }
+
+    private void InitializeitemObject()
+    {
+
+        itemObject = new Aset();
+        RandomGenerator gen = new RandomGenerator();
+        itemObject.TanggalPerolehan = DateHelper.GetLocalTimeNow();
+        itemObject.CreatedBy = UserName;
+        itemObject.Jumlah = 1;
+        itemObject.KodeBarang = $"B-{gen.RandomString(5)}-{gen.RandomNumber(5)}";
+        //itemObject.Id = -1;
+
+        customHeader = "Tambah Aset";
+    }
+    private async void DataChanged()
+    {
+        DataAset = service.GetAllData();
+        StateHasChanged();
+    }
+
+    private void PrepareForEdit(Aset item)
+    {
+        customHeader = "Ubah Aset";
+        itemObject = item;
+
+    }
+    private void PrepareForDelete(Aset item)
+    {
+        itemObject = item;
+    }
+    private void ViewQR(Aset item)
+    {
+        NavMgr.NavigateTo($"/viewqr?qrcode={item.KodeBarang}&source={NavMgr.Uri}");
+    }
+    private void ClearChat(Aset item)
+    {
+        ChatMessageService svc = new ChatMessageService();
+        if (item != null)
+        {
+            svc.ClearChat(item.Id);
+        }
+    }
+    private async Task Delete()
+    {
+        var task = service.DeleteData(itemObject.Id);
+        await jsRuntime.InvokeAsync<object>("CloseModal", "confirmDeleteModal");
+        DataAset = service.GetAllData();
+        itemObject = new Aset() { Id = -1 };
+    }
+
+    private async System.Threading.Tasks.Task applyPager(string TableName)
+    {
+        await jsRuntime.InvokeAsync<object>("applyPager", TableName);
+    }
+
+}

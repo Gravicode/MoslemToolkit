@@ -1,0 +1,243 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Remove="wwwroot\css\bootstrap\bootstrap.min.css.map" />
+    <Content Remove="wwwroot\css\open-iconic\FONT-LICENSE" />
+    <Content Remove="wwwroot\css\open-iconic\font\fonts\open-iconic.svg" />
+    <Content Remove="wwwroot\css\open-iconic\ICON-LICENSE" />
+    <Content Remove="wwwroot\css\open-iconic\README.md" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="Shared\LoadingAnimUI.razor" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\css\styles.css" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\font\Bahnschrift.woff" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\font\Bahnschrift.woff2" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\font\fonts.css" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\font\raleway-bold-webfont.woff" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\font\raleway-bold-webfont.woff2" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\font\raleway-bolditalic-webfont.woff" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\font\raleway-bolditalic-webfont.woff2" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\font\raleway-italic-webfont.woff" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\font\raleway-italic-webfont.woff2" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\font\raleway-light-webfont.woff" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\font\raleway-light-webfont.woff2" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\font\raleway-lightitalic-webfont.woff" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\font\raleway-lightitalic-webfont.woff2" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\font\raleway-medium-webfont.woff" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\font\raleway-medium-webfont.woff2" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\font\raleway-mediumitalic-webfont.woff" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\font\raleway-mediumitalic-webfont.woff2" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\font\raleway-regular-webfont.woff" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\font\raleway-regular-webfont.woff2" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\font\raleway-thin-webfont.woff" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\font\raleway-thin-webfont.woff2" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\font\raleway-thinitalic-webfont.woff" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\font\raleway-thinitalic-webfont.woff2" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\bg01.png" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\bg02.png" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\bg03.jpg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\bg04.jpg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\favicon.png" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\headerbg.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\icon-calendar.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\icon-imam.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\icon-khotib.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\icon-mosque.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\icon-muadzin.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\001-cloud.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\002-cloud-1.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\003-rainy.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\004-rainy-1.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\005-hail.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\006-snowy.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\007-night.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\008-storm.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\009-storm-1.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\010-windy.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\011-cloudy.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\012-snowy-1.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\013-storm-2.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\014-compass.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\015-day.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\016-flood.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\017-foog.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\018-flood-1.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\019-night-1.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\020-storm-3.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\021-night-2.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\022-night-3.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\023-windy-1.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\024-night-4.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\025-humidity.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\026-rainbow.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\027-rainbow-1.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\028-drop.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\029-shooting-star.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\030-wind.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\031-snowflake.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\032-star.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\033-hurricane.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\034-cloudy-1.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\035-snowy-2.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\036-storm-4.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\037-cloudy-2.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\038-cloudy-3.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\039-sun.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\040-sunrise.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\041-sunset.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\042-cold.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\043-warm.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\044-warm-1.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\045-thunder.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\046-tornado.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\047-tornado-1.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\048-umbrella.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\049-windy-2.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\050-windy-3.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\img\weather\cloudy.svg" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\js\jquery-3.4.1.min.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\js\scripts.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\libs\OwlCarousel2-2.3.4\assets\ajax-loader.gif" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\libs\OwlCarousel2-2.3.4\assets\owl.carousel.css" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\libs\OwlCarousel2-2.3.4\assets\owl.carousel.min.css" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\libs\OwlCarousel2-2.3.4\assets\owl.theme.default.css" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\libs\OwlCarousel2-2.3.4\assets\owl.theme.default.min.css" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\libs\OwlCarousel2-2.3.4\assets\owl.theme.green.css" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\libs\OwlCarousel2-2.3.4\assets\owl.theme.green.min.css" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\libs\OwlCarousel2-2.3.4\assets\owl.video.play.png" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\libs\OwlCarousel2-2.3.4\LICENSE" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\libs\OwlCarousel2-2.3.4\owl.carousel.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\libs\OwlCarousel2-2.3.4\owl.carousel.min.js" />
+    <_ContentIncludedByDefault Remove="wwwroot\assets\libs\OwlCarousel2-2.3.4\README.md" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="wwwroot\css\bootstrap\bootstrap.min.css.map" />
+    <None Include="wwwroot\css\open-iconic\FONT-LICENSE" />
+    <None Include="wwwroot\css\open-iconic\font\fonts\open-iconic.svg" />
+    <None Include="wwwroot\css\open-iconic\ICON-LICENSE" />
+    <None Include="wwwroot\css\open-iconic\README.md" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="7.0.5" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="7.0.5" PrivateAssets="all" />
+
+
+	  <PackageReference Include="Blazored.LocalStorage" Version="4.3.0" />
+	  <PackageReference Include="Blazored.Toast" Version="4.1.0" />
+	  <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+	  <PackageReference Include="System.Drawing.Common" Version="7.0.0" />
+	  <PackageReference Include="System.Net.Http" Version="4.3.4" />
+
+	  <PackageReference Include="System.Net.Http.Json" Version="7.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Shared\Mosque.ClockApp.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ServiceWorker Include="wwwroot\service-worker.js" PublishedContent="wwwroot\service-worker.published.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="Pages\Mosque1.razor">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
+    <Content Update="Pages\Mosque2.razor">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
+    <Content Update="Pages\Mosque3.razor">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
+    <Content Update="Shared\MainLayout.razor">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
+    <Content Update="wwwroot\appsettings.json">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Update="wwwroot\css\app.css">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Update="wwwroot\css\bootstrap\bootstrap.min.css">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Update="wwwroot\css\open-iconic\font\css\open-iconic-bootstrap.min.css">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Update="wwwroot\css\open-iconic\font\fonts\open-iconic.eot">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Update="wwwroot\css\open-iconic\font\fonts\open-iconic.otf">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Update="wwwroot\css\open-iconic\font\fonts\open-iconic.ttf">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Update="wwwroot\css\open-iconic\font\fonts\open-iconic.woff">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Update="wwwroot\favicon.ico">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Update="wwwroot\icon-192.png">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Update="wwwroot\icon-512.png">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Update="wwwroot\index.html">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Update="wwwroot\manifest.json">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Update="wwwroot\service-worker.js">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Update="wwwroot\service-worker.published.js">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Update="wwwroot\sound\bangun_malam.ogg">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Update="wwwroot\sound\notification.ogg">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <Content Update="wwwroot\sound\sahur_short.ogg">
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <UpToDateCheckInput Remove="Shared\LoadingAnimUI.razor" />
+  </ItemGroup>
+
+</Project>

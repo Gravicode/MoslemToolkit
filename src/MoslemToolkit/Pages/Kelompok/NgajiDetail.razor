@@ -1,0 +1,190 @@
+﻿@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject NgajiService service
+@inject IJSRuntime jsRuntime
+
+@using  System.IO
+<div class="modal" tabindex="-1" role="dialog" id="taskModal">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@CustomHeader</h5>
+
+
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@TaskObject" OnValidSubmit="@HandleValidSubmit">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+                    <div class="form-group">
+                        <label for="nama">Nama</label>
+                        <input type="hidden" @bind-value="@TaskObject.Id" />
+                        <InputText id="nama" class="form-control" @bind-Value="@TaskObject.Nama" />
+                        <ValidationMessage For="@(() => TaskObject.Nama)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="keterangan">Keterangan</label>
+                        <InputTextArea id="keterangan" class="form-control" @bind-Value="@TaskObject.Keterangan" />
+                        <ValidationMessage For="@(() => TaskObject.Keterangan)" />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tanggal1">Tanggal Dari</label>
+                        <input type="datetime" id="tanggal1" name="tanggal1" @bind-value="@TaskObject.TanggalDari" />
+                        <ValidationMessage For="@(() => TaskObject.TanggalDari)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="tanggal2">Tanggal Sampai</label>
+                        <input type="datetime" id="tanggal2" name="tanggal2" @bind-value="@TaskObject.TanggalSampai" />
+                        <ValidationMessage For="@(() => TaskObject.TanggalSampai)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="streaminglink">Streaming Link</label>
+                        <InputText id="streaminglink" name="streaminglink" class="form-control" @bind-Value="@TaskObject.StreamUrl" />
+                        <ValidationMessage For="@(() => TaskObject.StreamUrl)" />
+                    </div>
+                    
+
+
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                </EditForm>
+                <div class="mt-2">
+                    <div class="form-group">
+                        <label for="materilink">Lampiran Materi</label>
+                        @if (TaskObject.DocumentUrl != null && TaskObject.DocumentUrl.Length > 0)
+                        {
+                            int counter = 0;
+                            <ul style="list-style-type:none">
+                                @foreach (var file in TaskObject.DocumentUrl.Split(";"))
+                                {
+
+                                    <li><button class="btn btn-success" @onclick="@(()=>BukaLink(file))">Unduh File @(++counter)</button></li>
+
+                                }
+                            </ul>
+                        }
+                        <BlazorInputFile.InputFile multiple OnChange="HandleSelection" />
+                        <button class="btn btn-danger mt-1" @onclick="@HapusLampiran">Hapus semua lampiran</button>
+                        @if (selectedFiles != null)
+                        {
+                            foreach (var file in selectedFiles)
+                            {
+                                var isLoading = file.Data.Position > 0;
+
+                                <div class="file-row">
+                                    <!-- File info -->
+                                    <div>
+                                        <h2>@file.Name</h2>
+                                        Size: <strong>@file.Size bytes</strong>;
+                                        Last modified: <strong>@file.LastModified.ToShortDateString()</strong>;
+                                        Type: <strong>@file.Type</strong>
+                                    </div>
+
+                                    <!-- Upload button -->
+                                    <button class="btn btn-primary" @onclick="() => LoadFile(file)" disabled="@isLoading">
+                                        @if (!isLoading)
+                                        {
+                                            <span>Load</span>
+                                        }
+                                        else
+                                        {
+                                            <span>Loaded @((100.0 * file.Data.Position / file.Size).ToString("0"))%</span>
+                                        }
+                                    </button>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public RenderFragment CustomHeader { get; set; }
+    [Parameter]
+    public Ngaji TaskObject { get; set; }
+    [Parameter]
+    public Action DataChanged { get; set; }
+
+    List<string> NewFiles;
+
+    void HapusLampiran()
+    {
+        TaskObject.DocumentUrl = "";
+
+    }
+    async Task BukaLink(string Url)
+    {
+        if (!string.IsNullOrEmpty(Url))
+        {
+            var bytes = File.ReadAllBytes(Url);
+            await FileUtil.SaveAs(jsRuntime, Path.GetFileName(Url), bytes);
+        }
+        else
+        {   await jsRuntime.InvokeVoidAsync("ShowInfo", "File tidak bisa di download, tidak ditemukan");
+
+        }
+    }
+    IFileListEntry[] selectedFiles;
+
+    void HandleSelection(IFileListEntry[] files)
+    {
+        selectedFiles = files;
+    }
+
+    async Task LoadFile(IFileListEntry file)
+    {
+        if (NewFiles == null) NewFiles = new List<string>();
+        // So the UI updates to show progress
+        file.OnDataRead += (sender, eventArgs) => InvokeAsync(StateHasChanged);
+
+        // Just load into .NET memory to show it can be done
+        // Alternatively it could be saved to disk, or parsed in memory, or similar
+        var ms = new MemoryStream();
+        await file.Data.CopyToAsync(ms);
+        var filePath = $"{Path.GetTempPath()}{DateTime.Now.ToString("yyyy_MM_dd_")}{Path.GetFileName(file.Name)}";
+        await File.WriteAllBytesAsync(filePath,ms.ToArray());
+        NewFiles.Add(filePath);
+    }
+    private async void HandleValidSubmit()
+    {
+        if(NewFiles!=null && NewFiles.Count > 0)
+        {
+            var concat = "";
+            foreach(var item in NewFiles)
+            {
+                concat += item + ";";
+            }
+            TaskObject.DocumentUrl = concat;
+        }
+        if (TaskObject.Id == 0)
+        {
+
+            //TaskObject.Id = service.GetLastId();
+            service.InsertData(TaskObject);
+        }
+        else
+        {
+            service.UpdateData(TaskObject);
+        }
+
+        await CloseTaskModal();
+        DataChanged?.Invoke();
+    }
+
+
+
+    private async Task CloseTaskModal()
+    {
+        await jsRuntime.InvokeAsync<object>("CloseModal", "taskModal");
+    }
+
+
+}

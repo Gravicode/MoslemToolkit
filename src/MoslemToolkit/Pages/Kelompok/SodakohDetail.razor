@@ -1,0 +1,165 @@
+﻿@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject IJSRuntime jsRuntime
+@*@namespace MoslemToolkit.Pages.Master*@
+@using System.IO
+@inject IToastService toastService
+@inject AzureBlobHelper blob;
+
+<div class="modal" tabindex="-1" role="dialog" id="taskModal">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@CustomHeader</h5>
+
+                @*
+
+        <td>@item.Kategori</td>
+                    <td>@item.NamaBank</td>
+                    <td>@item.NoRekening</td>
+                    <td>@item.NamaRekening</td>
+                    <td>@item.NamaGopay</td>
+                    <td>@item.NomorGopay</td>
+                *@
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@TaskObject" OnValidSubmit="@HandleValidSubmit">
+                    <DataAnnotationsValidator />
+                    <div class="form-group">
+                        <label for="kategori">Kategori</label>
+                        <select @bind="@TaskObject.Kategori" id="kategori">
+                            <option value="-">Pilih</option>
+
+                            <option value="Sodakoh Lemparan">Sodakoh Lemparan</option>
+                            <option value="Isrun">Isrun</option>
+                            <option value="Pembangunan">Pembangunan</option>
+                            <option value="Qurban">Qurban</option>
+                            <option value="Lainnya">Lainnya</option>
+                        </select>
+                        <ValidationMessage For="@(() => TaskObject.Kategori)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="nama-bank">Nama Bank</label>
+                        <input type="hidden" @bind-value="@TaskObject.Id" />
+                        <InputText id="nama-bank" class="form-control" @bind-Value="@TaskObject.NamaBank" />
+                        <ValidationMessage For="@(() => TaskObject.NamaBank)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="norek">No Rekening</label>
+                      
+                        <InputText id="norek" class="form-control" @bind-Value="@TaskObject.NoRekening" />
+                        <ValidationMessage For="@(() => TaskObject.NoRekening)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="nama-pemilik">Nama Pemilik Rekening</label>
+                
+                        <InputText id="nama-pemilik" class="form-control" @bind-Value="@TaskObject.NamaRekening" />
+                        <ValidationMessage For="@(() => TaskObject.NamaRekening)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="nama-gopay">Nama Pemilik Gopay</label>
+                       
+                        <InputText id="nama-gopay" class="form-control" @bind-Value="@TaskObject.NamaGopay" />
+                        <ValidationMessage For="@(() => TaskObject.NamaGopay)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="no-gopay">Nomor HP Pemilik Gopay</label>
+                    
+                        <InputText id="no-gopay" class="form-control" @bind-Value="@TaskObject.NomorGopay" />
+                        <ValidationMessage For="@(() => TaskObject.NomorGopay)" />
+                    </div>
+                   
+
+                    <div class="form-group">
+                        <label for="nim">Upload Sodakoh</label>
+                        @if (!string.IsNullOrEmpty(FileUrl))
+                        {
+                            <div class="alert alert-info"> Gambar Gopay QR sudah upload.</div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning"> pilih QR Gopay lalu tunggu sampai gambar selesai di upload.</div>
+                        }
+                        <BlazorInputFile.InputFile OnChange="HandleFileSelected" />
+
+                    </div>
+
+
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    public string FileUrl { get; set; }
+    [Parameter]
+    public RenderFragment CustomHeader { get; set; }
+    [Parameter]
+    public Sodakoh TaskObject { get; set; }
+    [Parameter]
+    public Action DataChanged { get; set; }
+    MoslemToolkit.Data.SodakohService service;
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new SodakohService();
+        FileUrl = TaskObject.GopayQRUrl;
+    }
+    private async void HandleValidSubmit()
+    {
+
+        if (!string.IsNullOrEmpty(FileUrl))
+            TaskObject.GopayQRUrl = FileUrl;
+        else
+        {
+            toastService.ShowError("Silakan pilih Sodakoh terlebih dahulu");
+            return;
+        }
+        if (TaskObject.Id == 0)
+        {
+
+            service.InsertData(TaskObject);
+
+        }
+        else
+        {
+            service.UpdateData(TaskObject);
+        }
+
+        await CloseTaskModal();
+        DataChanged?.Invoke();
+    }
+
+    async Task HandleFileSelected(IFileListEntry[] files)
+    {
+        var file = files.FirstOrDefault();
+        if (file != null)
+        {
+            // Just load into .NET memory to show it can be done
+            // Alternatively it could be saved to disk, or parsed in memory, or similar
+
+            var ms = new MemoryStream();
+            await file.Data.CopyToAsync(ms);
+            //var bytes = ImageHelper.FixedSize(ms, 300, 300, false);
+            string newName = $"Sodakoh_{DateTime.Now.ToString("dd_MM_yyyy")}_{Path.GetFileNameWithoutExtension(file.Name)}{Path.GetExtension(file.Name)}";
+            var bytes = ms.ToArray();
+            ms.Dispose();
+            await blob.UploadFile(newName, bytes);
+            FileUrl = $"{AppConstants.UploadUrlPrefix}/{newName}";
+        }
+    }
+
+    private async Task CloseTaskModal()
+    {
+        await jsRuntime.InvokeAsync<object>("CloseModal", "taskModal");
+    }
+
+
+}

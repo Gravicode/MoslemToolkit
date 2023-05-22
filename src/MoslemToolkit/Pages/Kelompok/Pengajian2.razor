@@ -1,0 +1,240 @@
+﻿@page "/pengajian2"
+
+@inject MoslemToolkit.Data.NgajiService service
+@inject MoslemToolkit.Data.AbsensiService absenService
+@using MoslemToolkit.Data
+@using MoslemToolkit.Models
+@using MoslemToolkit.Shared.Usercontrols
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@inject NavigationManager NavMgr
+@inject IJSRuntime JSRuntime;
+@using  System.IO
+<h1>Pengajian Online Cimanggu</h1>
+
+<p>Assalamualaikum @UserName, silakan dipilih acara yang ingin diikuti dibawah ini.</p>
+@if (Mode == "List")
+{
+    <InfoNasehat></InfoNasehat>
+    <InfoSodakoh></InfoSodakoh>
+    <div class="row">
+    <div class="col-12">
+        <div class="card mb-2">
+            <div class="card-header">
+                Daftar Kehadiran (Khusus Offline)
+            </div>
+            <div class="card-body">
+                <p class="card-text">
+                    <button type="button" class="btn btn-success mb-1 mt-1" @onclick="AbsenNow" >
+                        Isi Daftar Hadir
+                    </button>
+                </p>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+    @*<MiniQurban></MiniQurban>*@
+    @if (datas == null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else
+    {
+        <div class="table-responsive text-nowrap">
+            <table class="table table-striped w-auto">
+                <thead>
+                    <tr>
+                        <th>Nama</th>
+                        <th>Tgl Dari</th>
+                        <th>Tgl Sampai</th>
+
+                        <th>Keterangan</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in datas)
+                    {
+                    <tr>
+                        <td><a style="cursor:grab" @onclick="@(() => Buka(item.Id))">@item.Nama</a></td>
+                        <td>@item.TanggalDari.ToString("dd/MMM/yyyy HH:mm")</td>
+                        <td>@item.TanggalSampai.ToString("dd/MMM/yyyy HH:mm")</td>
+
+                        <td>@item.Keterangan</td>
+                        <td><button class="btn btn-info" @onclick="@(() => Buka(item.Id))">Masuk</button></td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="row">
+            <div class="col col-12">
+                <button @onclick='()=> { NavMgr.NavigateTo("/index/pjkbm"); }' class="btn btn-info mt-1">PJKBM</button>
+
+                <button @onclick='()=> { NavMgr.NavigateTo("/master/pengumuman"); }' class="btn btn-primary mt-1">Pengumuman</button>
+                <button @onclick="BukaProgram" class="btn btn-success mt-1">Program Capaian Jamaah</button>
+                <button @onclick="Keluar" class="btn btn-danger mt-1">Keluar - jika sudah selesai</button>
+            </div>
+        </div>
+    }
+}
+else
+{
+    @if (SelAcara != null)
+    {
+        <div class="table-responsive">
+
+
+            <table class="table">
+                <tr><td>Acara: </td><td>@SelAcara.Nama</td></tr>
+                <tr><td>Keterangan: </td><td>@SelAcara.Keterangan</td></tr>
+                <tr>
+                    <td>
+                        Absensi:
+                    </td>
+                    <td>
+                        <CamCapture AcaraId="@(SelAcara.Id)" Tanggal="@DateHelper.GetLocalTimeNow()" Username="@UserName"></CamCapture>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Link Streaming: </td>
+                    <td>
+                        @if (!String.IsNullOrEmpty(SelAcara.StreamUrl))
+                        {
+
+                            <button @onclick="@(()=>BukaLink(SelAcara.StreamUrl))" class="btn btn-warning">Buka Link Ini Untuk Mulai Streaming</button>
+
+                        }
+                        else
+                        {
+                            <div class="alert alert-info">
+                                <b>Saat ini tidak ada acara pengajian/musyawarah.</b>
+                            </div>
+                        }
+                    </td>
+                </tr>
+                <tr>
+                    <td>Lampiran: </td>
+                    <td>
+                        @if (SelAcara.DocumentUrl != null && SelAcara.DocumentUrl.Length > 0)
+                        {
+                            int counter = 0;
+
+                            <ul style="list-style-type:none">
+                                @foreach (var file in SelAcara.DocumentUrl.Split(";"))
+                                {
+
+                                    <li><button @onclick="@(()=>BukaDoc(file))" class="btn btn-success">Unduh File @(Path.GetFileNameWithoutExtension(file))</button></li>
+
+                                }
+                            </ul>
+                        }
+                        else
+                        {
+                            <p>Tidak ada file materi</p>
+                        }
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <button @onclick="Kembali" class="btn btn-primary">Kembali</button>
+    }
+}
+@code {
+    List<Ngaji> datas;
+    Ngaji SelAcara;
+    string UserName { set; get; } = "";
+    string Mode { set; get; } = "List";
+    void AbsenNow(){
+        NavMgr.NavigateTo("/absensi-offline");
+    }
+    async Task Keluar()
+    {
+        await localStorage.SetItemAsync(AppConstants.NameKey, "");
+        NavMgr.NavigateTo($"/login");
+    }
+    void Kembali()
+    {
+        Mode = "List";
+        StateHasChanged();
+    }
+
+    void BukaProgram()
+    {
+        NavMgr.NavigateTo("/master/program-capaian-jamaah");
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            if (string.IsNullOrEmpty(UserName))
+            {
+                try
+                {
+                    UserName = await localStorage.GetItemAsync<string>(AppConstants.NameKey);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+                if (string.IsNullOrEmpty(UserName))
+                {
+                    NavMgr.NavigateTo($"/login");
+                }
+                else
+                {
+                    /*
+                    if (datas == null)
+                    {
+                        datas = service.GetAllData();
+                        StateHasChanged();
+                    }*/
+                }
+            }
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+         datas = service.GetAllData();
+
+    }
+    async Task BukaDoc(string Url)
+    {
+        if (!string.IsNullOrEmpty(Url))
+        {
+            var bytes = File.ReadAllBytes(Url);
+            await FileUtil.SaveAs(JSRuntime, Path.GetFileName(Url), bytes);
+        }
+        else
+        {
+            await JSRuntime.InvokeVoidAsync("ShowInfo", "File tidak bisa di download, tidak ditemukan");
+
+        }
+    }
+    void Buka(long Id)
+    {
+        SelAcara = service.GetDataById(Id);
+        Mode = "Detail";
+
+        absenService.Absen(new Absensi() { Nama = UserName, Tanggal = DateHelper.GetLocalTimeNow(), RefId = SelAcara.Id, JumlahOrang=1 });
+    }
+
+    async Task BukaLink(string Url)
+    {
+        if (string.IsNullOrEmpty(Url))
+        {
+
+            await JSRuntime.InvokeVoidAsync("ShowInfo", "Acara PeNgajian/Musyawarah saat ini tidak tersedia.");
+
+        }
+        else
+        {
+            NavMgr.NavigateTo(Url);
+
+        }
+    }
+}

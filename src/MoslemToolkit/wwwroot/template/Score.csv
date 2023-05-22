@@ -1,0 +1,5 @@
+﻿No,Formula,Nilai
+1,[A] > 85,A
+2,[A] > 70 and [A] <= 85,B
+3,[A] >= 56 and [A] <=70,C
+4,[A] < 56,D

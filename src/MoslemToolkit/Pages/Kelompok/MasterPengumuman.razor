@@ -1,0 +1,165 @@
+﻿@page "/master/Pengumuman"
+
+@inject IJSRuntime jsRuntime
+@using MoslemToolkit.Models
+@using MoslemToolkit.Helpers
+@using MoslemToolkit.Data
+@inject NavigationManager NavMgr
+@*@namespace MoslemToolkit.Pages.Master*@
+@inject IToastService toastService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@using System.IO
+<h1>Informasi / Pengumuman</h1>
+
+<p>Gunakan halaman ini untuk melihat pengumuman.</p>
+
+@if (DataPengumuman == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <body onbeforeunload="TestDataTablesRemove('#gridData')">
+        <div class="table-responsive">
+            <div class="list-group">
+                @foreach (var item in DataPengumuman)
+                {
+                <a @onclick:preventDefault="true" class="list-group-item list-group-item-action flex-column align-items-start">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1">@item.Judul</h5>
+                        <small class="text-muted">@(TimeHelpers.TimeAgo(item.Tanggal))</small>
+                    </div>
+                    <p class="mb-1">@item.Isi</p>
+                    <small class="text-muted">di post oleh @item.CreatedBy</small>
+
+                    @if (HasLogin)
+                    {
+                        <hr />
+                        <input type="button" class="btn btn-primary" @onclick="(() => PrepareForEdit(item))" data-toggle="modal" data-target="#taskModal" value="Ubah" />
+                        <input type="button" class="btn btn-danger" @onclick="(() => PrepareForDelete(item))" data-toggle="modal" data-target="#confirmDeleteModal" value="Hapus" />
+                    }
+                </a>
+                }
+            </div>
+                
+            </div>
+</body>
+}
+@if (HasLogin)
+{
+<div class="mt-1">
+    <input type="button" data-toggle="modal" data-target="#taskModal" class="btn btn-primary" value="Tambah Pengumuman" @onclick="(() => InitializeitemObject())" />
+</div>
+}
+<ConfirmDialog OnClick="@Delete" />
+<PengumumanDetail @ref="detail" TaskObject=@itemObject DataChanged="@DataChanged">
+    <CustomHeader>@customHeader</CustomHeader>
+</PengumumanDetail>
+
+@code {
+    bool HasLogin = false;
+
+    PengumumanDetail detail;
+    MoslemToolkit.Data.PengumumanService service;
+    string customHeader = string.Empty;
+    List<Pengumuman> DataPengumuman;
+    Pengumuman itemObject = new Pengumuman();
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    string UserName;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new PengumumanService();
+
+        DataPengumuman = service.GetAllData()?.OrderByDescending(x => x.Tanggal)?.ToList();
+
+
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (DataPengumuman != null && DataPengumuman.Count > 0)
+        {
+
+            await jsRuntime.InvokeAsync<object>("TestDataTablesAdd", "#gridData");
+        }
+        if (firstRender)
+        {
+            if (string.IsNullOrEmpty(UserName))
+            {
+                try
+                {
+                    UserName = await localStorage.GetItemAsync<string>(AppConstants.NameKey);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+                if (string.IsNullOrEmpty(UserName))
+                {
+                    NavMgr.NavigateTo($"/login");
+                }
+                else
+                {
+                    if (UserName == AppConstants.USER_ADMIN)
+                    {
+                        HasLogin = true;
+                        StateHasChanged();
+                    }
+                }
+            }
+        }
+    }
+    private void InitializeitemObject()
+    {
+
+        itemObject = new Pengumuman();
+        itemObject.Tanggal = DateHelper.GetLocalTimeNow();
+        itemObject.CreatedBy = UserName;
+
+
+        //itemObject.Id = -1;
+
+        customHeader = "Tambah Pengumuman";
+    }
+    private async void DataChanged()
+    {
+        DataPengumuman = service.GetAllData()?.OrderByDescending(x=>x.Tanggal)?.ToList();
+        StateHasChanged();
+    }
+
+    private void PrepareForEdit(Pengumuman item)
+    {
+        customHeader = "Ubah Pengumuman";
+        itemObject = item;
+
+    }
+    private void PrepareForDelete(Pengumuman item)
+    {
+        itemObject = item;
+    }
+    private void ClearChat(Pengumuman item)
+    {
+        ChatMessageService svc = new ChatMessageService();
+        if (item != null)
+        {
+            svc.ClearChat(item.Id);
+        }
+    }
+    private async Task Delete()
+    {
+        var task = service.DeleteData(itemObject.Id);
+        await jsRuntime.InvokeAsync<object>("CloseModal", "confirmDeleteModal");
+        DataPengumuman = service.GetAllData();
+        itemObject = new Pengumuman() { Id = -1 };
+    }
+
+    private async System.Threading.Tasks.Task applyPager(string TableName)
+    {
+        await jsRuntime.InvokeAsync<object>("applyPager", TableName);
+    }
+
+}

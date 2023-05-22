@@ -1,0 +1,128 @@
+﻿@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject IJSRuntime jsRuntime
+@*@namespace MoslemToolkit.Pages.Master*@
+@using System.IO
+@inject IToastService toastService
+
+<div class="modal" tabindex="-1" role="dialog" id="taskModal">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@CustomHeader</h5>
+
+
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@TaskObject" OnValidSubmit="@HandleValidSubmit">
+                    <DataAnnotationsValidator />
+                     <div class="form-group">
+                        <label for="akun">Akun Sodakoh</label>
+                        <select @bind="@TaskObject.AkunSodakohKhususId" id="akun">
+                            <option value="-">Pilih</option>
+                            @if (dataAkun != null)
+                            {
+                                foreach(AkunSodakohKhusus item in dataAkun)
+                                {
+                                  <option value="@item.Id">@item.Nama</option>
+
+                                }
+                            }
+                        </select>
+                        <ValidationMessage For="@(() => TaskObject.AkunSodakohKhususId)" />
+                    </div>
+                    <div class="form-group">
+                        <input type="hidden" @bind-value="@TaskObject.Id" />
+                        <label for="Nama">Nama Jamaah</label>
+                        <select @bind="@TaskObject.JamaahId" id="nama">
+                            <option value="-">Pilih</option>
+                            @if (dataJamaah != null)
+                            {
+                                foreach(Jamaah jamaah in dataJamaah)
+                                {
+                                  <option value="@jamaah.Id">@jamaah.Nama</option>
+
+                                }
+                            }
+                        </select>
+                        <ValidationMessage For="@(() => TaskObject.JamaahId)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="keterangan">Keterangan</label>
+                        <InputTextArea id="keterangan" class="form-control" @bind-Value="@TaskObject.Keterangan" />
+                        <ValidationMessage For="@(() => TaskObject.Keterangan)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="tgl">Tanggal</label>
+                        <InputDate id="tgl" class="form-control" @bind-Value="@TaskObject.Tanggal" />
+                        <ValidationMessage For="@(() => TaskObject.Tanggal)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="jml">Jumlah Setoran (Rp)</label>
+                        <InputNumber id="jml" class="form-control" @bind-Value="@TaskObject.Jumlah" />
+                        <ValidationMessage For="@(() => TaskObject.Jumlah)" />
+                    </div>
+
+
+                    <button type="submit" class="btn btn-primary btn-sm mt-1">Simpan</button>
+                    <button type="button" class="btn btn-secondary btn-sm mt-1" data-dismiss="modal">Cancel</button>
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    [Parameter]
+    public RenderFragment CustomHeader { get; set; }
+    [Parameter]
+    public SetoranSodakohKhusus TaskObject { get; set; }
+    [Parameter]
+    public Action DataChanged { get; set; }
+    MoslemToolkit.Data.SetoranSodakohKhususService service;
+    MoslemToolkit.Data.AkunSodakohKhususService Akunsvc;
+    MoslemToolkit.Data.JamaahService JamaahSvc;
+    List<Jamaah> dataJamaah;
+    List<AkunSodakohKhusus> dataAkun;
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new SetoranSodakohKhususService();
+        if (JamaahSvc  == null) JamaahSvc = new  JamaahService();
+        if (Akunsvc  == null) Akunsvc = new  AkunSodakohKhususService();
+        dataJamaah = JamaahSvc.GetAllData();
+        dataAkun = Akunsvc.GetAllData();
+
+    }
+    private async void HandleValidSubmit()
+    {
+
+
+        if (TaskObject.Id == 0)
+        {
+
+            service.InsertData(TaskObject);
+
+        }
+        else
+        {
+            service.UpdateData(TaskObject);
+        }
+
+        await CloseTaskModal();
+        DataChanged?.Invoke();
+    }
+
+
+
+    private async Task CloseTaskModal()
+    {
+        await jsRuntime.InvokeAsync<object>("CloseModal", "taskModal");
+    }
+
+
+}

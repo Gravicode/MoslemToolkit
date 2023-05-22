@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Mosque.ClockApp.Client</title>
+    <base href="/" />
+    <link href="css/bootstrap/bootstrap.min.css" rel="stylesheet" />
+    <link href="css/app.css" rel="stylesheet" />
+    <link href="Mosque.ClockApp.Client.styles.css" rel="stylesheet" />
+    <link href="manifest.json" rel="manifest" />
+    <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png" />
+
+    
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link rel="icon" type="image/png" href="assets/img/favicon.png" />
+    <link type="text/css" rel="stylesheet" href="assets/font/fonts.css" />
+    <link type="text/css" rel="stylesheet" href="assets/libs/OwlCarousel2-2.3.4/assets/owl.carousel.min.css" />
+    <link type="text/css" rel="stylesheet" href="assets/css/styles.css" />
+    <script type="text/javascript" src="assets/js/jquery-3.4.1.min.js"></script>
+    <script type="text/javascript" src="assets/libs/OwlCarousel2-2.3.4/owl.carousel.min.js"></script>
+   
+    <script type="text/javascript" src="assets/js/scripts.js"></script>
+    <!-- Blazored.Toast https://github.com/Blazored/Toast -->
+    <link href="_content/Blazored.Toast/blazored-toast.min.css" rel="stylesheet" />
+    <!-- Blazored.Toast -->
+</head>
+
+<body>
+    <div id="app">
+         <div style="position:absolute; top:30vh; width:100%; text-align:center">
+        <h1>Mosque Clock - Cimanggu Online</h1>
+        <div style="display:flex; gap:10px; justify-content:center; align-items:center">
+          <div class="spinner-border" role="status"></div>
+          jam masjid sedang dimuat, sabar...
+        </div>
+      </div>
+
+    </div>
+
+    <div id="blazor-error-ui">
+        An unhandled error has occurred.
+        <a href="" class="reload">Reload</a>
+        <a class="dismiss">🗙</a>
+    </div>
+    <script src="_framework/blazor.webassembly.js"></script>
+    <script>navigator.serviceWorker.register('service-worker.js');</script>
+     <script type="text/javascript">
+
+        function PlayAudio(elementName) {
+            var media = document.getElementById(elementName);
+            //var media = new Audio('/sound/notification.ogg');
+
+            media.muted = false;
+            media.play();
+        }
+
+        function LoadPage(idx, praytime, img_url, video_url) {
+            var praytime1 = [
+                { 'Imsyak': praytime.Imsyak },
+                { 'Shubuh': praytime.Shubuh },
+                { 'Terbit': praytime.Terbit },
+                { 'Dzuhur': praytime.Dzuhur },
+                { 'Ashar': praytime.Ashar },
+                { 'Maghrib': praytime.Maghrib },
+                { 'Isya': praytime.Isya },
+            ];
+            switch (idx) {
+                case 1:
+                    // code block
+                    //single background image :
+                    initPage(img_url);
+
+                    //multiple background images (slider) :
+                    //initPage(['assets/img/bg01.png','assets/img/bg03.jpg','assets/video/bendera.mp4']);
+
+                    //single background video :
+                    //initPage('assets/video/bendera.mp4');
+                    
+                    initPrayerTime(praytime1);
+                    break;
+                case 2:
+                    // code block
+                    //single background image :
+                    //initPage('assets/img/bg01.png'); 
+
+                    //multiple background images (slider) :
+                    initPage(img_url);
+
+                    //single background video :
+                    //initPage('assets/video/bendera.mp4'); 
+                   
+                    initPrayerTime(praytime1);
+                    break;
+                case 3:
+                    // code block
+                    //single background image :
+                    //initPage('assets/img/bg01.png'); 
+
+                    //multiple background images (slider) :
+                    //initPage(['assets/img/bg01.png','assets/img/bg03.jpg']); 
+
+                    //single background video :
+                    initPage(video_url);
+
+                    initPrayerTime(praytime1);
+                    /*
+                     [
+                        { 'Imsyak': '04:21' },
+                        { 'Shubuh': '04:30' },
+                        { 'Dzuhur': '11:49' },
+                        { 'Ashar': '15:03' },
+                        { 'Maghrib': '17:50' },
+                        { 'Isya': '18:58' },
+                    ]
+                     */ 
+                    break;
+                default:
+                // code block
+            }
+           
+        }
+
+
+        // for loading component
+        function loadingComponent(status) {
+            if (status) {
+                $('#loading').show();
+            }
+            else {
+                $('#loading').hide();
+            }
+        }
+    </script>
+</body>
+
+</html>

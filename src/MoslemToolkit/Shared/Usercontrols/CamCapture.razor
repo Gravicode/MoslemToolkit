@@ -1,0 +1,111 @@
+﻿@using MoslemToolkit.Models
+@inject IJSRuntime JSRuntime
+@inject IToastService toastService
+@using System.IO
+@inject AzureBlobHelper blob;
+@using MoslemToolkit.Helpers
+
+@inject MoslemToolkit.Data.AbsensiService absenService
+@inject MoslemToolkit.Data.FaceService faceService
+
+@using Microsoft.Azure.CognitiveServices.Vision.Face.Models
+
+<div class="row">
+<div class="col-6">
+    <canvas id="@options.CanvasID" 
+                style="background-color:lightgray;"
+                width="@options.Width"
+                height="@HeightPic">
+    </canvas>    
+</div>    
+<div class="col-6">
+    <img id="@ImageId" />    
+</div>
+</div>
+<div>
+    <button class="btn btn-success mt-1" @onclick="Start">Mulai Camera</button>
+    <button class="btn btn-info mt-1" @onclick="Capture">Ambil Foto</button>
+</div>
+<div style="display:none;">
+    <video id="@options.VideoID"
+           style="background-color:lightblue; visibility:hidden;"
+           width="@options.Width">Video stream tidak tersedia.
+    </video>
+
+</div>
+@code {
+    [Parameter]
+    public string Username { set; get; }
+
+    [Parameter]
+    public DateTime Tanggal { set; get; }
+
+    [Parameter]
+    public long AcaraId { set; get; }
+
+    const int HeightPic = AppConstants.FACE_HEIGHT;//60;
+    const int WidthPic = AppConstants.FACE_WIDTH;// 80;
+
+    string ImageId = "imgcam1";  
+    bool IsCamStarting = false;
+    WebCamOptions options = new WebCamOptions() 
+        { 
+            CanvasID = "canvas1",
+             VideoID = "video1"
+        };
+    protected override void OnInitialized()
+    {
+        options.Filter = 
+            "contrast(1.4)";
+        options.Width = WidthPic;
+    }
+    public async Task Start()
+    {
+        await JSRuntime.InvokeVoidAsync("WebCamFunctions.start", options);
+        IsCamStarting = true;
+    }
+    public async Task Capture()
+    {
+        if(!IsCamStarting){
+            toastService.ShowInfo("start camera dulu.");
+            return;
+        }
+        var img64 = await JSRuntime.InvokeAsync<string>("CaptureCanvas", options.CanvasID, ImageId);
+        byte[] datas = System.Convert.FromBase64String(img64);
+        if (datas != null)
+        {
+            RandomGenerator gen = new RandomGenerator();
+            // Just load into .NET memory to show it can be done
+            // Alternatively it could be saved to disk, or parsed in memory, or similar
+
+            
+
+            var result = await faceService.UploadAndDetectFaces(datas);
+
+            //Image image = Image.FromStream(ms);
+            //Convert to Bitmap
+            //Bitmap bitmapImage = (Bitmap)image;
+
+            //Set the specific image data into the ImageInputData type used in the DataView
+            //ImageInputData imageInputData = new ImageInputData { Image = bitmapImage };
+
+            //Detect the objects in the image                
+            //var result = DetectAndPaintImage(imageInputData);
+            var ms = new MemoryStream();
+            result.img.Save(ms,result.img.RawFormat);
+            
+            //end of detection
+            var bytes = ImageHelper.FixedSize(ms, WidthPic, HeightPic, false);
+            string newName = $"absensi_{DateTime.Now.ToString("dd_MM_yyyy")}_{gen.RandomNumber(5)}.png";
+            //var bytes = ms.ToArray();
+            ms.Dispose();
+            await blob.UploadFile(newName, bytes);
+            var FileUrl = $"{AppConstants.UploadUrlPrefix}/{newName}";
+            var faceCount = result.faces.Count();
+            absenService.Update(new Absensi() { Nama = Username, Tanggal = Tanggal, RefId = AcaraId, PhotoUrl=FileUrl, JumlahOrang = faceCount<1?1:faceCount });
+        }
+    }
+    
+    
+        
+}

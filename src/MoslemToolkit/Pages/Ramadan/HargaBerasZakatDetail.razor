@@ -1,0 +1,88 @@
+﻿@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject IJSRuntime jsRuntime
+@*@namespace MoslemToolkit.Pages.Master*@
+@using System.IO
+@inject IToastService toastService
+
+<div class="modal" tabindex="-1" role="dialog" id="taskModal">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@CustomHeader</h5>
+
+
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@TaskObject" OnValidSubmit="@HandleValidSubmit">
+                    <DataAnnotationsValidator />
+
+                    <div class="form-group">
+                        <label for="tahun">Tahun</label>
+                        <InputNumber id="tahun" class="form-control" @bind-Value="@TaskObject.Tahun" />
+                        <ValidationMessage For="@(() => TaskObject.Tahun)" />
+                    </div>
+<div class="form-group">
+                        <label for="HargaBerasZakat">Harga Beras Zakat</label>
+                        <InputNumber id="HargaBerasZakat" class="form-control" @bind-Value="@TaskObject.HargaJualBeras" />
+                        <ValidationMessage For="@(() => TaskObject.HargaJualBeras)" />
+                    </div>
+
+
+
+
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    public string FileUrl { get; set; }
+    [Parameter]
+    public RenderFragment CustomHeader { get; set; }
+    [Parameter]
+    public HargaBerasZakat TaskObject { get; set; }
+    [Parameter]
+    public Action DataChanged { get; set; }
+    MoslemToolkit.Data.HargaBerasZakatService service;
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new HargaBerasZakatService();
+
+    }
+    private async void HandleValidSubmit()
+    {
+
+        var exist = service.GetDataById(TaskObject.Tahun);
+        if (exist == null)
+        {
+
+            service.InsertData(TaskObject);
+
+        }
+        else
+        {
+            service.UpdateData(TaskObject);
+        }
+
+        await CloseTaskModal();
+        DataChanged?.Invoke();
+    }
+
+
+
+    private async Task CloseTaskModal()
+    {
+        await jsRuntime.InvokeAsync<object>("CloseModal", "taskModal");
+    }
+
+
+}

@@ -1,0 +1,113 @@
+﻿@page "/Mosque2"
+@page "/Mosque2/{Kode}"
+@using Mosque.ClockApp.Client.Helpers
+@using Mosque.ClockApp.Client.Model
+@using Newtonsoft.Json
+@using System.Globalization
+@inject NavigationManager NavMgr
+@inject IJSRuntime jsRuntime
+@inject IToastService toastService
+
+@inject Blazored.LocalStorage.ISyncLocalStorageService localStorage
+ <div class="page">
+        <div class="header alt">
+            <div class="top">
+                <div class="logo">
+                    <img src="assets/img/icon-mosque.svg" alt="logo">
+                    <span>MASJID <b>@detail?.NamaMasjid</b></span>
+                </div>
+                <div class="calendar">
+                    <div class="dates">
+                        <div class="date1">@TanggalHijriah</div>
+                        <div class="date2">@TanggalMasehi</div>
+                    </div>
+                    <div class="weather"><img src="assets/img/weather/cloudy.svg" alt=""></div>
+                    <div class="clock alt-font">
+                        <span class="hour">@Jam</span><span class="sec tick">:</span><span class="min">@Menit</span>
+                    </div>
+                    <div class="location">@detail?.Lokasi</div>
+                </div>
+            </div>
+            <div class="banner">
+                <div class="title">PENGUMUMAN</div>
+                <div class="marquee">
+                    <div class="texts">
+                     @if (detail != null && detail.Pengumuman != null) {
+                        List<string> dataarr = new();
+                        detail.Pengumuman.ForEach(x => dataarr.Add(x.Keterangan));
+                        var dataStr = String.Join(" | ", dataarr);
+                        @dataStr
+                    }
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="content alt">
+            <div class="sidebar">
+                <div class="timer alt-font" style="display: none;">
+                    <div class="counter">
+                        <span class="countdown"><span class="hour">00</span><span class="sec tick">:</span><span class="min">00</span></span> <span>menuju </span> <span class="target">-</span>   
+                    </div>
+                </div>
+                <div class="prayer-schedule">
+                    <!--[these contents will be replaced by function initPrayerTime ]-->
+                    <div class="box">
+                        <div class="header">Imsyak</div>
+                        <div class="time alt-font">04:21</div>
+                    </div>
+                    <div class="box">
+                        <div class="header">Shubuh</div>
+                        <div class="time alt-font">04:30</div>
+                    </div>
+                    <div class="box">
+                        <div class="header">Terbit</div>
+                        <div class="time alt-font">05:30</div>
+                    </div>
+                    <div class="box">
+                        <div class="header">Dzuhur</div>
+                        <div class="time alt-font">11:49</div>
+                    </div>
+                    <div class="box">
+                        <div class="header">Ashar</div>
+                        <div class="time alt-font">15:03</div>
+                    </div>
+                    <div class="box active">
+                        <div class="header">Maghrib</div>
+                        <div class="time alt-font">17:50</div>
+                    </div>
+                    <div class="box">
+                        <div class="header">Isya</div>
+                        <div class="time alt-font">18:59</div>
+                    </div>
+                </div>
+            </div>
+            <div class="page-background">
+            </div>        
+        </div>
+        <div class="footer alt">
+            <div class="info info-imam">
+                <img src="assets/img/icon-imam.svg" alt="">
+                <div class="title">IMAM</div>
+                <div class="text">@detail?.Imam</div>
+            </div>
+            <div class="info info-muadzin">
+                <img src="assets/img/icon-muadzin.svg" alt="">
+                <div class="title">MUADZIN</div>
+                <div class="text">@detail?.Muazin</div>
+            </div>
+            <div class="info info-khotib">
+                <img src="assets/img/icon-khotib.svg" alt="">
+                <div class="title">KHOTIB</div>
+                <div class="text">@detail?.Khotib</div>
+            </div>
+            <div class="event">
+                <img src="assets/img/icon-calendar.svg" alt="">
+                @if (detail?.Kegiatan != null && detail?.Kegiatan.Count > 0)
+            {
+                <div class="title">@detail?.Kegiatan[EventCounter]?.Tanggal.ToString("dddd, dd MMM yyyy",ci)</div>
+                <div class="desc">@detail?.Kegiatan[EventCounter]?.Nama</div>
+            }
+            </div>
+        </div>
+    </div>
+

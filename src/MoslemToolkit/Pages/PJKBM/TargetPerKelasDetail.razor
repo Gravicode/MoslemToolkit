@@ -1,0 +1,191 @@
+﻿@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@using System.Linq
+@inject IJSRuntime jsRuntime
+@inject TargetPerKelasService service
+@inject MateriPerKelasService MateriPerKelasSvc
+@using System.IO
+@inject IToastService toastService
+
+<div class="modal" tabindex="-1" role="dialog" id="taskModal">
+    <div class="modal-dialog modal-lg" style="min-width:90%" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@CustomHeader</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="semester">Semester</label>
+                    <input type="number" id="semester" class="form-control" @bind="@semester" />
+
+                </div>
+                <div class="form-group">
+                    <label for="tahun">Tahun</label>
+                    <input type="number" id="tahun" class="form-control" @bind="@tahun" />
+
+                </div>
+                @if (DaftarMateri != null)
+                {
+                    <div class="table-responsive" style="overflow-y:auto;">
+                        <table id="gridData2" name="gridData" class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Pilih</th>
+                                    <th>No</th>
+                                    <th>Bab</th>
+                                    <th>Nama</th>
+                                    <th>Keterangan</th>
+                                    <th>Target Nilai</th>
+                                    <th>Deskripsi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in DaftarMateri)
+                                {
+                                    <tr>
+                                        <td><input type="checkbox" @bind="@item.Selected"></td>
+                                        <td>@item.No</td>
+                                        <td>@item.Bab?.Nama</td>
+                                        <td>@item.Nama</td>
+                                        <td>@item.Keterangan</td>
+                                        <td><input type="number" class="form-control" @bind="item.TargetNilai"></td>
+                                        <td><input type="text" class="form-control" @bind="item.TargetDeskripsi"></td>
+
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                <button type="submit" class="btn btn-primary" @onclick="HandleValidSubmit">Simpan</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+<ConfirmDialog ModalId="dialogDelete2" @ref="deleteDialog2" OnClick="@ProcessData" />
+
+@code {
+    ConfirmDialog deleteDialog2;
+
+    int semester = 1, tahun = DateTime.Now.Year;
+
+    List<TargetMateriTemp> DaftarMateri;
+    public string FileUrl { get; set; }
+    [Parameter]
+    public RenderFragment CustomHeader { get; set; }
+    [Parameter]
+    public Kelas TaskObject { get; set; }
+    [Parameter]
+    public Action DataChanged { get; set; }
+    MoslemToolkit.Data.MateriService MateriSvc;
+    KelasService KelasSvc;
+    protected override async Task OnInitializedAsync()
+    {
+        if (KelasSvc == null) KelasSvc = new KelasService();
+        if (MateriSvc == null) MateriSvc = new MateriService();
+        Refresh();
+    }
+
+    public void Refresh()
+    {
+        if (TaskObject == null) return;
+        var dict = new HashSet<long>();
+        var selectedMateri = service.GetDataByKelasId(TaskObject.Id);
+        if (!selectedMateri.Any())
+        {
+            //jika buat baru, copy dari data materi per kelas
+            var copyMateri = MateriPerKelasSvc.GetDataByKelasId(TaskObject.Id);
+            copyMateri.ForEach(c => { dict.Add(c.MateriId); });
+        }
+        else
+        {
+            selectedMateri.ForEach(c => { dict.Add(c.MateriId); });
+        }
+       
+        if (DaftarMateri == null)
+        {
+
+            var allTargetPerKelas = MateriSvc.GetAllData();
+            DaftarMateri = new List<TargetMateriTemp>();
+            foreach (var item in allTargetPerKelas)
+            {
+                TargetMateriTemp newItem = new TargetMateriTemp(item);
+                newItem.Selected = dict.Contains(item.Id);
+                if (newItem.Selected)
+                {
+                    var sel = selectedMateri.Where(x => x.MateriId == item.Id).FirstOrDefault();
+                    if (sel != null)
+                    {
+                        newItem.TargetDeskripsi = sel.TargetDeskripsi;
+                        newItem.TargetNilai = sel.TargetNilai;
+                    }
+                    else
+                    {
+                        newItem.TargetNilai = 85;
+                        newItem.TargetDeskripsi = "Materi disampaikan, paham.";
+                    }
+                }
+                else
+                {
+                    newItem.TargetNilai = 85;
+                    newItem.TargetDeskripsi = "Materi disampaikan, paham.";
+                }
+                DaftarMateri.Add(newItem);
+            }
+        }
+        else
+        {
+
+            foreach (var item in DaftarMateri)
+            {
+                item.Selected = dict.Contains(item.Id);
+            }
+        }
+
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await jsRuntime.InvokeAsync<object>("TestDataTablesAdd", "#gridData2");
+    }
+    private async void HandleValidSubmit()
+    {
+        var materis = new List<Materi>();
+        var selected = DaftarMateri.Where(x => x.Selected).ToList();
+        selected.ForEach(x =>
+        {
+            materis.Add(x);
+        });
+
+        deleteDialog2.Message = "Yakin ingin mengubah data ini ?";
+
+        await jsRuntime.InvokeVoidAsync("ShowModal", deleteDialog2.ModalId);
+
+    }
+
+    async void ProcessData()
+    {
+        //var removed =
+        var materis = new List<TargetMateriTemp>();
+        var selected = DaftarMateri.Where(x => x.Selected).ToList();
+        selected.ForEach(x =>
+        {
+            materis.Add(x);
+        });
+        service.UpdateData(TaskObject, materis, semester, tahun);
+
+        await CloseTaskModal();
+        DataChanged?.Invoke();
+        await jsRuntime.InvokeVoidAsync("CloseModal", deleteDialog2.ModalId);
+    }
+
+    private async Task CloseTaskModal()
+    {
+        await jsRuntime.InvokeAsync<object>("CloseModal", "taskModal");
+    }
+
+
+}

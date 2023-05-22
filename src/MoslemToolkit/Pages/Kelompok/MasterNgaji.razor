@@ -1,0 +1,163 @@
+﻿@page "/master-Ngaji"
+
+@inject NgajiService service
+@inject IJSRuntime jsRuntime
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@using System.IO
+<h1>Data Acara</h1>
+
+<p>Daftar Acara-acara pengajian cimanggu.</p>
+
+@if (DataNgaji == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+
+    <body onbeforeunload="TestDataTablesRemove('#gridData')">
+        <div class="table-responsive">
+            <table id="gridData" name="gridData" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Nama</th>
+                        <th>Keterangan</th>
+                        <th>Tgl. Dari</th>
+                        <th>Tgl. Sampai</th>
+                        <th>Streaming Link</th>
+                        <th>Materi Link</th>
+
+                        <th>Actions</th>
+                    </tr>
+
+                </thead>
+                <tbody>
+                    @foreach (var item in DataNgaji)
+                    {
+                        <tr>
+                            <td>@item.Nama</td>
+                            <td>@item.Keterangan</td>
+                            <td>@item.TanggalDari.ToString("dd/MMM/yyyy HH:mm")</td>
+                            <td>@item.TanggalSampai.ToString("dd/MMM/yyyy HH:mm")</td>
+                            <td>@item.StreamUrl</td>
+                            <td>
+                                @if (item.DocumentUrl != null && item.DocumentUrl.Length > 0)
+                                {
+                                    int counter = 0;
+                                    <ul style="list-style-type:none">
+                                        @foreach (var file in item.DocumentUrl.Split(";"))
+                                        {
+
+                                            <li><button class="btn btn-success" @onclick="@(()=>BukaLink(file))">Unduh File @(++counter)</button></li>
+                                        }
+                                    </ul>
+                                }
+                                else
+                                {
+                                    <p>Tidak ada file materi</p>
+                                }
+
+                            </td>
+
+                            <td>
+                                <input type="button" class="btn btn-primary" @onclick="(() => PrepareForEdit(item))" data-toggle="modal" data-target="#taskModal" value="Ubah" />
+                                <input type="button" class="btn btn-danger" @onclick="(() => PrepareForDelete(item))" data-toggle="modal" data-target="#confirmDeleteModal" value="Hapus" />
+                                <input type="button" class="btn btn-warning" @onclick="(() => PrepareForDelete(item))" data-toggle="modal" data-target="#ConfirmAbsensi" value="Reset Absensi" />
+
+
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </body>
+}
+<div>
+    <input type="button" data-toggle="modal" data-target="#taskModal" class="btn btn-primary" value="Tambah Acara" @onclick="(() => InitializeitemObject())" />
+</div>
+<ConfirmDialog Message="Mau hapus agenda?" OnClick="@Delete" />
+<ConfirmDialog Message="Mau reset absensi?" ModalId="ConfirmAbsensi" OnClick="@ClearAbsen" />
+
+<NgajiDetail TaskObject=@itemObject DataChanged="@DataChanged">
+    <CustomHeader>@customHeader</CustomHeader>
+</NgajiDetail>
+
+@code {
+    string customHeader = string.Empty;
+    List<Ngaji> DataNgaji;
+    Ngaji itemObject = new Ngaji();
+    async Task BukaLink(string Url)
+    {
+        if (!string.IsNullOrEmpty(Url))
+        {
+            var bytes = File.ReadAllBytes(Url);
+            await FileUtil.SaveAs(jsRuntime, Path.GetFileName(Url), bytes);
+        }
+        else
+        {
+            await jsRuntime.InvokeVoidAsync("ShowInfo", "File tidak bisa di download, tidak ditemukan");
+
+        }
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        DataNgaji = service.GetAllData();
+    }
+
+
+    private void InitializeitemObject()
+    {
+        itemObject = new Ngaji();
+        //itemObject.Id = -1;
+        itemObject.TanggalDari = DateHelper.GetLocalTimeNow();
+        itemObject.TanggalSampai = DateHelper.GetLocalTimeNow().AddHours(1.5);
+        customHeader = "Tambah Acara";
+    }
+    private async void DataChanged()
+    {
+        DataNgaji = service.GetAllData();
+        StateHasChanged();
+    }
+    private void PrepareForEdit(Ngaji item)
+    {
+        customHeader = "Ubah Acara";
+        itemObject = item;
+    }
+    private void PrepareForDelete(Ngaji item)
+    {
+        itemObject = item;
+    }
+    private async Task Delete()
+    {
+        var task = service.DeleteData(itemObject.Id);
+        await jsRuntime.InvokeAsync<object>("CloseModal", "confirmDeleteModal");
+        DataNgaji = service.GetAllData();
+        itemObject = new Ngaji() { Id = -1 };
+    }
+    private async Task ClearAbsen()
+    {
+        AbsensiService absen = new AbsensiService();
+        var datas = absen.GetAllData().Where(x => x.RefId == itemObject.Id).ToList();
+        for (int i = 0; i < datas.Count; i++)
+        {
+            absen.DeleteData(datas[i].Id);
+        }
+        await jsRuntime.InvokeAsync<object>("CloseModal", "ConfirmAbsensi");
+        itemObject = new Ngaji() { Id = -1 };
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (DataNgaji != null && DataNgaji.Count > 0)
+        {
+
+            await jsRuntime.InvokeAsync<object>("TestDataTablesAdd", "#gridData");
+        }
+        if (firstRender)
+        {
+
+        }
+    }
+        }

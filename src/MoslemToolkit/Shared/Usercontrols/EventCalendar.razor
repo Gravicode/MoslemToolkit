@@ -1,0 +1,37 @@
+﻿<div>
+<div class="month">
+  <ul>
+    <li @onclick="Prev" class="prev">&#10094;</li>
+    <li @onclick="Next" class="next">&#10095;</li>
+    <li>@DateHelper.GetMonthName(CurrentDate.Month)<br><span style="font-size:18px">@CurrentDate.Year</span></li>
+  </ul>
+</div>
+
+<ul class="weekdays">
+@foreach(DayOfWeek day in Enum.GetValues(typeof(DayOfWeek))){
+  <li>@DateHelper.GetDayName(day)</li> 
+  }
+</ul>
+
+<ul class="days">
+    @if(StartDate.DayOfWeek != DayOfWeek.Sunday)
+    {
+        for(int i = 0; i < (int)StartDate.DayOfWeek; i++)
+        {
+            <li></li>
+        }
+    }
+    @for(DateTime day = StartDate; day <= EndDate; day= day.AddDays(1))
+    {
+        if (HasEvent(day))
+        {
+          <li><span class="active">@day.Day</span></li>
+        }
+        else
+        {
+          <li>@day.Day</li>
+        }
+    }
+ 
+</ul>   
+</div>

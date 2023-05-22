@@ -1,0 +1,174 @@
+﻿@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@using MoslemToolkit.Helpers
+
+@inject IJSRuntime jsRuntime
+@*@namespace MoslemToolkit.Pages.Master*@
+@using System.IO
+@inject IToastService toastService
+@inject AzureBlobHelper blob;
+
+<div class="modal" tabindex="-1" role="dialog" id="taskModal">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@CustomHeader</h5>
+
+
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@TaskObject" OnValidSubmit="@HandleValidSubmit">
+                    <DataAnnotationsValidator />
+
+                    <div class="form-group">
+                        <label for="kk">No. KK</label>
+                        <input type="hidden" @bind-value="@TaskObject.Id" />
+                        <InputText id="kk" class="form-control" @bind-Value="@TaskObject.KK" />
+                        <ValidationMessage For="@(() => TaskObject.KK)" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="nourut">No Urut</label>
+                        <InputNumber id="nourut" class="form-control" @bind-Value="@TaskObject.NoUrut" />
+                        <ValidationMessage For="@(() => TaskObject.NoUrut)" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="nama">Nama Lengkap</label>
+                        <InputText id="nama" class="form-control" @bind-Value="@TaskObject.Nama" />
+                        <ValidationMessage For="@(() => TaskObject.Nama)" />
+                    </div>
+
+
+                    <div class="form-group">
+                        <label for="posisi">Posisi</label>
+                        <select @bind="@TaskObject.Posisi" id="posisi">
+                            <option value="-">Pilih</option>
+                            @foreach (PosisiKeluarga item in Enum.GetValues(typeof(PosisiKeluarga)))
+                            {
+                                <option value="@item">@item.ToString()</option>
+
+                            }
+                        </select>
+                        <ValidationMessage For="@(() => TaskObject.Posisi)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="mustahik">Mustahik</label>
+                        <input type="checkbox" id="mustahik" class="form-control" @bind="@TaskObject.IsMustahik" />
+                        <ValidationMessage For="@(() => TaskObject.IsMustahik)" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="beras">Zakat Beras (sok)</label>
+                        <input type="number" id="beras" class="form-control" @bind="@TaskObject.ZakatBeras" />
+                        <ValidationMessage For="@(() => TaskObject.ZakatBeras)" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="titip">Titip Zakat (Rp)</label>
+                        <input type="number" id="titip" class="form-control" @bind="@TaskObject.TitipZakat" />
+                        <ValidationMessage For="@(() => TaskObject.TitipZakat)" />
+                    </div>
+
+                     <div class="form-group">
+                        <label for="selisihberas">Selisih Beras (sok)</label>
+                        <input type="number" id="selisihberas" class="form-control" @bind="@TaskObject.SelisihBeras" />
+                        <ValidationMessage For="@(() => TaskObject.SelisihBeras)" />
+                    </div>
+
+                     <div class="form-group">
+                        <label for="titip1">Selisih Titipan (Rp)</label>
+                        <input type="number" id="titip1" class="form-control" @bind="@TaskObject.SelisihTitipan" />
+                        <ValidationMessage For="@(() => TaskObject.SelisihTitipan)" />
+                    </div>
+
+                     <div class="form-group">
+                        <label for="amil">Amil</label>
+                        <input type="text" id="amil" class="form-control" @bind="@TaskObject.Amil" />
+                        <ValidationMessage For="@(() => TaskObject.Amil)" />
+                    </div>
+
+                        <div class="form-group">
+                        <label for="talangan">Dana Talangan (Rp)</label>
+                        <input type="number" id="talangan" class="form-control" @bind="@TaskObject.DanaTalangan" />
+                        <ValidationMessage For="@(() => TaskObject.DanaTalangan)" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sudahzakat">Sudah Zakat</label>
+                        <input type="checkbox" id="sudahzakat" class="form-control" @bind="@TaskObject.SudahZakat" />
+                        <ValidationMessage For="@(() => TaskObject.SudahZakat)" />
+                    </div>
+                <div class="form-group">
+                        <label for="sudahreal">Sudah Realisasi</label>
+                        <input type="checkbox" id="sudahreal" class="form-control" @bind="@TaskObject.SudahRealisasi" />
+                        <ValidationMessage For="@(() => TaskObject.SudahRealisasi)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="sudahcatat">Sudah DiCatat</label>
+                        <input type="checkbox" id="sudahcatat" class="form-control" @bind="@TaskObject.SudahTercatat" />
+                        <ValidationMessage For="@(() => TaskObject.SudahTercatat)" />
+                    </div>
+
+                       <div class="form-group">
+                        <label for="tahun">Tahun</label>
+                        <input type="number" id="tahun" class="form-control" @bind="@TaskObject.Tahun" />
+                        <ValidationMessage For="@(() => TaskObject.Tahun)" />
+                    </div>
+                
+                <button type="submit" class="btn btn-primary">Simpan</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+   
+    [Parameter]
+    public RenderFragment CustomHeader { get; set; }
+    [Parameter]
+    public Muzaki TaskObject { get; set; }
+    [Parameter]
+    public Action DataChanged { get; set; }
+    MoslemToolkit.Data.MuzakiService service;
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new MuzakiService();
+     
+    }
+    private async void HandleValidSubmit()
+    {
+
+      
+      
+        if (TaskObject.Id == 0)
+        {
+
+            var hasil = service.InsertData(TaskObject);
+            if (!hasil)
+            {
+                toastService.ShowError("Gagal menyimpan data. Isi data dengan lengkap.");
+            }
+        }
+        else
+        {
+            service.UpdateData(TaskObject);
+        }
+
+        await CloseTaskModal();
+        DataChanged?.Invoke();
+    }
+    private async Task CloseTaskModal()
+    {
+        await jsRuntime.InvokeAsync<object>("CloseModal", "taskModal");
+    }
+
+
+}

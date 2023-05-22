@@ -1,0 +1,168 @@
+﻿@page "/master/KPI"
+
+@inject IJSRuntime jsRuntime
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject NavigationManager NavMgr
+@*@namespace MoslemToolkit.Pages.Master*@
+@inject IToastService toastService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@using System.IO
+<h1>Daftar KPI 4s</h1>
+
+<p>Gunakan halaman ini untuk mengatur KPI.</p>
+
+@if (DataKPI == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <body onbeforeunload="TestDataTablesRemove('#gridData')">
+        <div class="table-responsive">
+            <table id="gridData" name="gridData" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Kategori</th>
+                        <th>Parameter</th>
+                        <th>Deskripsi</th>
+                        <th>Dapukan</th>
+
+                        <th>Actions</th>
+                    </tr>
+
+                </thead>
+                <tbody>
+                    @foreach (var item in DataKPI)
+                    {
+                        <tr>
+                            <td>@item.Kategori</td>
+                            <td>@item.Parameter</td>
+                            <td>@item.Deskripsi</td>
+                            <td>@item.Dapukan.Nama</td>
+
+
+
+                            <td>
+
+                                <input type="button" class="btn btn-primary btn-sm mt-1" @onclick="(() => PrepareForEdit(item))" data-toggle="modal" data-target="#taskModal" value="Ubah" />
+                                <input type="button" class="btn btn-danger btn-sm mt-1" @onclick="(() => PrepareForDelete(item))" data-toggle="modal" data-target="#confirmDeleteModal" value="Hapus" />
+
+
+                            </td>
+
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </body>
+}
+<div>
+    <input type="button" data-toggle="modal" data-target="#taskModal" class="btn btn-primary" value="Tambah KPI" @onclick="(() => InitializeitemObject())" />
+</div>
+<ConfirmDialog OnClick="@Delete" />
+<KPIDetail @ref="detail" TaskObject=@itemObject DataChanged="@DataChanged">
+    <CustomHeader>@customHeader</CustomHeader>
+</KPIDetail>
+
+@code {
+    KPIDetail detail;
+    MoslemToolkit.Data.KPIService service;
+    string customHeader = string.Empty;
+    List<KPI> DataKPI;
+    KPI itemObject = new KPI();
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    string UserName;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new KPIService();
+
+        DataKPI = service.GetAllData();
+
+
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (DataKPI != null && DataKPI.Count > 0)
+        {
+
+            await jsRuntime.InvokeAsync<object>("TestDataTablesAdd", "#gridData");
+        }
+        if (firstRender)
+        {
+            if (string.IsNullOrEmpty(UserName))
+            {
+                try
+                {
+                    UserName = await localStorage.GetItemAsync<string>(AppConstants.NameKey);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+                if (string.IsNullOrEmpty(UserName))
+                {
+                    NavMgr.NavigateTo($"/login");
+                }
+                else
+                {
+
+                }
+            }
+        }
+    }
+
+    private void InitializeitemObject()
+    {
+
+        itemObject = new KPI();
+
+
+
+        //itemObject.Id = -1;
+
+        customHeader = "Tambah KPI";
+    }
+    private async void DataChanged()
+    {
+        DataKPI = service.GetAllData();
+        StateHasChanged();
+    }
+
+    private void PrepareForEdit(KPI item)
+    {
+        customHeader = "Ubah KPI";
+        itemObject = item;
+
+    }
+    private void PrepareForDelete(KPI item)
+    {
+        itemObject = item;
+    }
+    private void ClearChat(KPI item)
+    {
+        ChatMessageService svc = new ChatMessageService();
+        if (item != null)
+        {
+            svc.ClearChat(item.Id);
+        }
+    }
+    private async Task Delete()
+    {
+        var task = service.DeleteData(itemObject.Id);
+        await jsRuntime.InvokeAsync<object>("CloseModal", "confirmDeleteModal");
+        DataKPI = service.GetAllData();
+        itemObject = new KPI() { Id = -1 };
+    }
+
+    private async System.Threading.Tasks.Task applyPager(string TableName)
+    {
+        await jsRuntime.InvokeAsync<object>("applyPager", TableName);
+    }
+
+}

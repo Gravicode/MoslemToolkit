@@ -1,0 +1,209 @@
+﻿@page "/master/CashflowQurban"
+
+@inject IJSRuntime jsRuntime
+@inject CashflowQurbanService service
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+
+@inject NavigationManager NavMgr
+@inject IToastService toastService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+<h1>Cashflow Qurban</h1>
+
+<p>Gunakan halaman ini untuk mengorganisasi Cashflow Qurban.</p>
+
+<div class="row">
+    <div class="col col-12">
+        <div class="form-group">
+            <label for="tahun-dari" class="col-sm-2 col-form-label">Dari Tahun</label>
+            <div class="col-sm-11">
+                <select @onchange="Refresh" value="@Tahun" id="tahun">
+                    <option value="-1">Semua</option>
+                    @foreach (var th in TahunList)
+                    {
+                        <option value="@th">@th</option>
+
+                    }
+
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (DataCashflowQurban == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+
+    <body onbeforeunload="TestDataTablesRemove('#gridData')">
+        <div class="table-responsive">
+            <table id="gridData" name="gridData" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Tanggal</th>
+                        <th>Nama</th>
+                        <th>Tipe</th>
+                        <th>Kategori</th>
+                        <th>Harga Satuan (Rp)</th>
+                        <th>Quantity</th>
+                        <th>Total (Rp)</th>
+                        <th>Diterima Oleh</th>
+                        <th>Dibayar Oleh</th>
+                        <th>Actions</th>
+                    </tr>
+
+                </thead>
+                <tbody>
+                    @foreach (var item in DataCashflowQurban)
+                    {
+                        <tr>
+                            <td>@item.Tanggal.ToString("yyyy-MM-dd")</td>
+                            <td>@item.Nama</td>
+                            <td>@item.Tipe.ToString()</td>
+                            <td>@item.Kategori</td>
+                            <td>@item.HargaSatuan.ToString("n2")</td>
+                            <td>@item.Quantity.ToString("n0")</td>
+                            <td>@item.Total.ToString("n2")</td>
+                            <td>@item.DiterimaOleh</td>
+                            <td>@item.DibayarOleh</td>
+                            <td>
+
+                                <input type="button" class="btn btn-primary" @onclick="(() => PrepareForEdit(item))" data-toggle="modal" data-target="#taskModal" value="Ubah" />
+                                <input type="button" class="btn btn-danger" @onclick="(() => PrepareForDelete(item))" data-toggle="modal" data-target="#confirmDeleteModal" value="Hapus" />
+
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </body>
+}
+<div>
+    <input type="button" data-toggle="modal" data-target="#taskModal" class="btn btn-primary" value="Tambah Cashflow Qurban" @onclick="(() => InitializeitemObject())" />
+</div>
+<ConfirmDialog OnClick="@Delete" />
+<CashflowQurbanDetail @ref="detail" TaskObject=@itemObject DataChanged="@DataChanged">
+    <CustomHeader>@customHeader</CustomHeader>
+</CashflowQurbanDetail>
+
+@code {
+    CashflowQurbanDetail detail;
+    //MoslemToolkit.Data.CashflowQurbanService service;
+    string customHeader = string.Empty;
+    List<CashflowQurban> DataCashflowQurban;
+    CashflowQurban itemObject = new CashflowQurban();
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    string UserName;
+    int Tahun=-1;
+    List<int> TahunList;
+
+    void Refresh(ChangeEventArgs e)
+    {
+        Tahun = int.Parse( e.Value.ToString());
+        DataRefresh();
+    }
+
+    void DataRefresh()
+    {
+        if(Tahun<0)
+            DataCashflowQurban = service.GetAllData();
+        else
+            DataCashflowQurban = service.GetDataByYear(Tahun);
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        //if (service == null) service = new CashflowQurbanService();
+
+        TahunList = service.GetTahuns();
+        //Tahun = TahunList.Max();
+        DataRefresh();
+    }
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (DataCashflowQurban != null && DataCashflowQurban.Count > 0)
+        {
+
+            await jsRuntime.InvokeAsync<object>("TestDataTablesAdd", "#gridData");
+        }
+        if (firstRender)
+        {
+            if (string.IsNullOrEmpty(UserName))
+            {
+                try
+                {
+                    UserName = await localStorage.GetItemAsync<string>(AppConstants.NameKey);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+                if (string.IsNullOrEmpty(UserName))
+                {
+                    NavMgr.NavigateTo($"/login");
+                }
+                else
+                {
+
+                }
+            }
+        }
+    }
+
+    private void InitializeitemObject()
+    {
+
+        itemObject = new CashflowQurban();
+        RandomGenerator gen = new RandomGenerator();
+        itemObject.Tanggal = DateHelper.GetLocalTimeNow();
+        itemObject.DibayarOleh = "KU";
+        itemObject.Quantity = 1;
+
+        customHeader = "Tambah Cashflow Qurban";
+    }
+    private async void DataChanged()
+    {
+        DataCashflowQurban = service.GetAllData();
+        StateHasChanged();
+    }
+
+    private void PrepareForEdit(CashflowQurban item)
+    {
+        customHeader = "Ubah Cashflow Qurban";
+        itemObject = item;
+
+    }
+    private void PrepareForDelete(CashflowQurban item)
+    {
+        itemObject = item;
+    }
+    private void ClearChat(CashflowQurban item)
+    {
+        ChatMessageService svc = new ChatMessageService();
+        if (item != null)
+        {
+            svc.ClearChat(item.Id);
+        }
+    }
+    private async Task Delete()
+    {
+        var task = service.DeleteData(itemObject.Id);
+        await jsRuntime.InvokeAsync<object>("CloseModal", "confirmDeleteModal");
+        DataRefresh();
+        itemObject = new CashflowQurban() { Id = -1 };
+    }
+
+    private async System.Threading.Tasks.Task applyPager(string TableName)
+    {
+        await jsRuntime.InvokeAsync<object>("applyPager", TableName);
+    }
+
+}

@@ -1,0 +1,163 @@
+﻿@using MoslemToolkit.Models
+@inject IToastService toastService
+@inject NavigationManager NavMgr
+
+
+<div class="row">
+    <div class="col-12">
+        <div class="card mb-2">
+            <div class="card-header">
+                Sodakoh Lemparan
+            </div>
+            <div class="card-body">
+
+                <p class="card-text">
+                    <button type="button" class="btn btn-primary mb-1 mt-1" data-toggle="modal" data-target="#sodakohTransfer">
+                        Via Transfer
+                    </button>
+                    <button type="button" class="btn btn-primary mb-1 mt-1" data-toggle="modal" data-target="#sodakohGopay">
+                        Via GoPay
+                    </button>
+                    <button type="button" class="btn btn-primary mb-1 mt-1" data-toggle="modal" data-target="#sodakohAmplop">
+                        Via Amplop
+                    </button>
+                </p>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal" tabindex="-1" id="sodakohTransfer" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Sodakoh via Transfer</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Silakan transfer sodakoh ke rekening berikut:</p>
+                @if (selSodakoh != null)
+                {
+                    <table class="table table-bordered">
+                        <tr>
+                            <td>No Rekening</td>
+                            <td>:</td>
+                            <td>@selSodakoh.NoRekening</td>
+                        </tr>
+                        <tr>
+                            <td>Nama Bank</td>
+                            <td>:</td>
+                            <td>@selSodakoh.NamaBank</td>
+                        </tr>
+                        <tr>
+                            <td>Pemilik Rekening</td>
+                            <td>:</td>
+                            <td>@selSodakoh.NamaRekening</td>
+                        </tr>
+                    </table>
+                    <p>setelah itu upload bukti transfer dengan tombol konfirmasi dibawah ini, Ajkhr</p>
+                    <button class="btn btn-primary" data-dismiss="modal" @onclick='(()=> { NavMgr.NavigateTo("/master/buktitransfer"); })'>Konfirmasi</button>
+                }
+                else
+                {
+                    <p>tidak ada info</p>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal" tabindex="-1" id="sodakohGopay" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Sodakoh via GoPay</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Silakan buka aplikasi GoJek lalu ke pilih menu Pay dan scan QR berikut:</p>
+                @if (selSodakoh != null)
+                {
+                    <table class="table table-bordered">
+                        <tr>
+                            <td>SCAN QR</td>
+                            <td>:</td>
+                            <td><img width="300" src="@selSodakoh.GopayQRUrl" alt="gopay qr" /></td>
+                        </tr>
+                        <tr>
+                            <td>Nama Gopay</td>
+                            <td>:</td>
+                            <td>@selSodakoh.NamaGopay</td>
+                        </tr>
+                        <tr>
+                            <td>No HP Gopay Penerima</td>
+                            <td>:</td>
+                            <td>@selSodakoh.NomorGopay</td>
+                        </tr>
+                    </table>
+                    <p>setelah itu upload bukti transfer dengan tombol konfirmasi dibawah ini, Ajkhr</p>
+                    <button class="btn btn-primary" data-dismiss="modal" @onclick='(()=> { NavMgr.NavigateTo("/master/buktitransfer"); })'>Konfirmasi</button>
+                }
+                else
+                {
+                    <p>tidak ada info</p>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal" tabindex="-1" id="sodakohAmplop" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Sodakoh via Amplop Titipan</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Kumpulkan sodakoh di dalam amplop nanti dapat dibawa saat jumatan di kelompok, atau saat mengaji off-line, atau minta amal soleh tim penerobos untuk mengambil. Ajkhr</p>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+@code {
+    Sodakoh selSodakoh;
+    MoslemToolkit.Data.SodakohService service;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new SodakohService();
+
+        selSodakoh = GetSodakohInfo();
+
+
+    }
+
+    Sodakoh GetSodakohInfo()
+    {
+        var data = service.GetAllData();
+        var selItem = data.Where(x => x.Kategori.ToLower().Contains("sodakoh")).FirstOrDefault();
+        return selItem;
+    }
+
+}

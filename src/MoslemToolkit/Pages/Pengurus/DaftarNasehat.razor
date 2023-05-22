@@ -1,0 +1,112 @@
+﻿@page "/daftar-nasehat"
+
+@inject IJSRuntime jsRuntime
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject NavigationManager NavMgr
+@*@namespace MoslemToolkit.Pages.Master*@
+@inject IToastService toastService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@using System.IO
+<h1>Daftar Penasehat</h1>
+
+@if (DataNasehat == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <body onbeforeunload="TestDataTablesRemove('#gridData')">
+        <div class="table-responsive text-nowrap">
+            <table id="gridData" name="gridData" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Tanggal</th>
+                        <th>Topik</th>
+
+                        <th>Penasehat 1</th>
+                        <th>Penasehat 2</th>
+
+
+                    </tr>
+
+                </thead>
+                <tbody>
+                    @foreach (var item in DataNasehat)
+                    {
+                    <tr>
+                        <td>@item.Tanggal.ToString("yyyy-MM-dd")</td>
+                        <td>@item.Topik</td>
+
+                        <td>@item.Penasehat1</td>
+
+                        <td>@item.Penasehat2</td>
+
+
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </body>
+}
+
+@code {
+    NasehatDetail detail;
+    MoslemToolkit.Data.NasehatService service;
+    string customHeader = string.Empty;
+    List<Nasehat> DataNasehat;
+    Nasehat itemObject = new Nasehat();
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    string UserName;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new NasehatService();
+
+        DataNasehat = service.GetAllData().OrderBy(x=>x.Tanggal).ToList();
+
+
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (DataNasehat != null && DataNasehat.Count > 0)
+        {
+
+            await jsRuntime.InvokeAsync<object>("TestDataTablesAdd", "#gridData");
+        }
+        if (firstRender)
+        {
+            if (string.IsNullOrEmpty(UserName))
+            {
+                try
+                {
+                    UserName = await localStorage.GetItemAsync<string>(AppConstants.NameKey);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+                if (string.IsNullOrEmpty(UserName))
+                {
+                    NavMgr.NavigateTo($"/login");
+                }
+                else
+                {
+
+                }
+            }
+        }
+    }
+
+
+
+    private async System.Threading.Tasks.Task applyPager(string TableName)
+    {
+        await jsRuntime.InvokeAsync<object>("applyPager", TableName);
+    }
+
+}

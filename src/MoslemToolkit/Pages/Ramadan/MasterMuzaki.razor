@@ -1,0 +1,270 @@
+﻿@page "/master/Muzaki"
+
+@inject IJSRuntime jsRuntime
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject NavigationManager NavMgr
+@*@namespace MoslemToolkit.Pages.Master*@
+@inject IToastService toastService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+
+@using System.IO
+<h1>Data Muzaki Kelompok</h1>
+
+<p>Gunakan halaman ini untuk menyimpan data Muzaki kelompok.</p>
+<button class="btn btn-success mt-1 mb-1" @onclick="Export">Export to Excel</button>
+
+<div class="row">
+    <div class="col col-12">
+        <div class="form-group">
+            <label for="nama" class="col-sm-2 col-form-label">Tahun</label>
+            <div class="col-sm-11">
+                <input type="number" @bind="Tahun" id="tahun" >
+                <input type="button" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#confirmClearModal" value="Hapus Data" />
+
+            </div>
+        </div>
+         <div class="form-group">
+                        <label for="filter">Filter Data</label>
+                        <select @onchange="ChangeFilter" id="filter">
+                            <option selected value="0">Semua</option>
+                            <option value="1">Titip Beras</option>
+                            <option value="2">Titip Uang</option>
+                            <option value="3">Belum</option>
+
+                        </select>
+                     
+                    </div>
+        <div class="form-group">
+            <label for="nim">Upload Data Muzaki</label>
+            <b><a href="/template/TemplateMuzaki.xlsx">Download template data</a></b>
+            <div class="alert alert-warning"> pilih dokumen lalu tunggu sampai dokumen selesai di upload.</div>
+
+            <BlazorInputFile.InputFile OnChange="HandleFileSelected" />
+
+        </div>
+    </div>
+
+</div>
+
+@if (DataMuzaki == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    @*<body onbeforeunload="TestDataTablesRemove('#gridData')">*@
+        <div class="table-responsive">
+            <table id="gridData" name="gridData" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>No. KK</th>
+                        <th>No. Urut</th>
+                        <th>Nama</th>
+                        <th>Realisasi</th>
+                        <th>Qty</th>
+                        <th>Beras</th>
+                        <th>Titip Zakat</th>
+                        <th>Selisih Beras</th>
+                        <th>Selisih Uang</th>
+                        <th>Tercatat</th>
+
+                        <th>Tahun</th>
+
+                        <th>Actions</th>
+                    </tr>
+
+                </thead>
+                <tbody>
+                    @foreach (var item in DataMuzaki.OrderBy(a=>a.KK).ThenBy(a=>a.NoUrut))
+                    {
+                    <tr>
+                        <td>@item.KK</td>
+                        <td>@item.NoUrut</td>
+                        <td>@item.Nama</td>
+                        <td>@(item.SudahRealisasi?"Sudah":"Belum")</td>
+                        <td>@(item.SudahRealisasi?"1":"0")</td>
+                        <td>@item.ZakatBeras sok</td>
+                        <td>Rp. @item.TitipZakat.ToString("n0")</td>
+                        <td>@item.SelisihBeras.ToString("n2") sok</td>
+                        <td>Rp. @item.SelisihTitipan.ToString("n0")</td>
+                        <td>@(item.SudahTercatat?"Sudah":"Belum")</td>
+                        <td>@item.Tahun</td>
+                        <td>
+
+                            @if (true)
+                            {
+                                <input type="button" class="btn btn-primary" @onclick="(() => PrepareForEdit(item))" data-toggle="modal" data-target="#taskModal" value="Ubah" />
+                                <input type="button" class="btn btn-danger" @onclick="(() => PrepareForDelete(item))" data-toggle="modal" data-target="#confirmDeleteModal" value="Hapus" />
+                            }
+                        </td>
+
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    @*</body>*@
+}
+<div class="alert alert-primary">Total Jamaah: @(DataMuzaki.Count.ToString("n0")) orang</div>
+<div class="alert alert-info">Total Beras: @(DataMuzaki.Sum(x=>x.ZakatBeras).ToString("n0")) sok</div>
+<div class="alert alert-success">Total Titip Uang: Rp. @(DataMuzaki.Sum(x=>x.TitipZakat).ToString("n0"))</div>
+<div class="alert alert-warning">Total Selisih Beras: @(DataMuzaki.Sum(x=>x.SelisihBeras).ToString("n0")) sok</div>
+<div class="alert alert-warning">Total Selisih Uang: Rp. @(DataMuzaki.Sum(x=>x.SelisihTitipan).ToString("n0"))</div>
+
+@if (HasLogin)
+{
+    <div>
+        <input type="button" data-toggle="modal" data-target="#taskModal" class="btn btn-primary" value="Tambah Muzaki" @onclick="(() => InitializeitemObject())" />
+    </div>
+}
+<ConfirmDialog OnClick="@Delete" />
+<ConfirmDialog OnClick="@ClearData" ModalId="confirmClearModal" Message="Hapus data untuk tahun terpilih?" />
+
+<MuzakiDetail @ref="detail" TaskObject=@itemObject DataChanged="@DataChanged">
+    <CustomHeader>@customHeader</CustomHeader>
+</MuzakiDetail>
+
+@code {
+    int Tahun;
+    bool HasLogin = false;
+    MuzakiDetail detail;
+    MoslemToolkit.Data.MuzakiService service;
+    string customHeader = string.Empty;
+    List<Muzaki> DataMuzaki;
+    Muzaki itemObject = new Muzaki();
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    string UserName;
+    int FilterData = 0;
+    void ChangeFilter(ChangeEventArgs e)
+    {
+        FilterData = int.Parse(e.Value.ToString());
+        RefreshData();
+    }
+    async Task ClearData()
+    { 
+        await jsRuntime.InvokeAsync<object>("CloseModal", "confirmClearModal");        
+        service.ClearData(Tahun);
+        DataMuzaki = service.GetAllData();
+       
+    }
+    async Task Export()
+    {
+        var bytes = service.ExportToExcel();
+        await FileUtil.SaveAs(jsRuntime, "Muzaki.xlsx", bytes);
+    }
+    void RefreshData(){
+        DataMuzaki = service.GetAllData(Tahun,FilterData);
+        //StateHasChanged();
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new MuzakiService();
+        Tahun = DateTime.Now.Year;
+        RefreshData();
+
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (DataMuzaki != null && DataMuzaki.Count > 0)
+        {
+
+            //await jsRuntime.InvokeAsync<object>("TestDataTablesAdd", "#gridData");
+        }
+        if (firstRender)
+        {
+            if (string.IsNullOrEmpty(UserName))
+            {
+                try
+                {
+                    UserName = await localStorage.GetItemAsync<string>(AppConstants.NameKey);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+                if (string.IsNullOrEmpty(UserName))
+                {
+                    NavMgr.NavigateTo($"/login");
+                }
+                else if (!string.IsNullOrEmpty(UserName) && UserName == AppConstants.USER_ADMIN)
+                {
+                    HasLogin = true;
+                    StateHasChanged();
+                }
+            }
+        }
+    }
+
+    private void InitializeitemObject()
+    {
+
+        itemObject = new Muzaki();
+        itemObject.Tahun = DateTime.Now.Year;
+
+        //detail.DocumentUrl = "";
+
+        //itemObject.Id = -1;
+
+        customHeader = "Tambah Muzaki";
+    }
+    private async void DataChanged()
+    {
+        RefreshData();
+        StateHasChanged();
+    }
+
+    private void PrepareForEdit(Muzaki item)
+    {
+        customHeader = "Ubah Data Muzaki";
+        itemObject = item;
+        //detail.DocumentUrl = item.DocumentUrl;
+    }
+    private void PrepareForDelete(Muzaki item)
+    {
+        itemObject = item;
+    }
+    private async Task Delete()
+    {
+        var task = service.DeleteData(itemObject.Id);
+        await jsRuntime.InvokeAsync<object>("CloseModal", "confirmDeleteModal");
+        RefreshData();
+        itemObject = new Muzaki() { Id = -1 };
+    }
+
+    private async System.Threading.Tasks.Task applyPager(string TableName)
+    {
+        await jsRuntime.InvokeAsync<object>("applyPager", TableName);
+    }
+    async Task HandleFileSelected(IFileListEntry[] files)
+    {
+        var file = files.FirstOrDefault();
+        if (file != null)
+        {
+            // Just load into .NET memory to show it can be done
+            // Alternatively it could be saved to disk, or parsed in memory, or similar
+
+            var ms = new MemoryStream();
+            await file.Data.CopyToAsync(ms);
+            //var bytes = ImageHelper.FixedSize(ms, 300, 300, false);
+            //string newName = $"dokumen_{DateTime.Now.ToString("dd_MM_yyyy")}_{Path.GetFileNameWithoutExtension(file.Name)}{Path.GetExtension(file.Name)}";
+            var bytes = ms.ToArray();
+            ms.Dispose();
+            var tempFile = Path.GetTempFileName() + ".xlsx";
+
+            File.WriteAllBytes(tempFile, bytes);
+
+            var hasil = service.UploadExcel(Tahun, tempFile);
+            if (hasil)
+            {
+                toastService.ShowInfo("Upload berhasil.");
+                StateHasChanged();
+            }
+            else
+                toastService.ShowError("Upload excel gagal.");
+        }
+    }
+}

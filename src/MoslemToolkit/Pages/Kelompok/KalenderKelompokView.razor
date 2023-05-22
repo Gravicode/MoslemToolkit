@@ -1,0 +1,195 @@
+﻿@page "/KalenderKelompokView"
+@inject IJSRuntime jsRuntime
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject NavigationManager NavMgr
+@*@namespace MoslemToolkit.Pages.Master*@
+@inject IToastService toastService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+@using System.IO
+<button class="btn btn-primary" @onclick="Cetak">Download</button>
+<div id="@DivContainer" style="background:white">
+<h1>Kalender Kegiatan Kelompok</h1>
+<div class="row">
+    <div class="col-4">
+        <EventCalendar @ref="calendar"></EventCalendar>
+    </div>
+    <div class="col-8">
+
+@if (DataKalenderKelompok == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <body onbeforeunload="TestDataTablesRemove('#gridData')">
+        <div class="table-responsive">
+            <table id="gridData" name="gridData" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Tanggal Mulai</th>
+                        <th>Tanggal Selesai</th>
+                        <th>Kegiatan</th>
+                        <th>Keterangan</th>
+                    </tr>
+
+                </thead>
+                <tbody>
+                    @foreach (var item in DataKalenderKelompok)
+                    {
+                    <tr>
+                        <td>@item.TanggalMulai.ToString("dd/MM/yyyy")</td>
+                        <td>@item.TanggalSelesai.ToString("dd/MM/yyyy")</td>
+                        <td>@item.Kegiatan</td>
+                        <td>@item.Keterangan</td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </body>
+}
+</div>
+</div>
+<div class="row">
+<div class="col-12">
+<h4>Jadwal Nasehat</h4>
+@if (DataNasehat == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <body onbeforeunload="TestDataTablesRemove('#gridData2')">
+        <div class="table-responsive text-nowrap">
+            <table id="gridData2" name="gridData" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Tanggal</th>
+                        <th>Topik</th>
+
+                        <th>Penasehat 1</th>
+                        <th>Penasehat 2</th>
+
+
+                    </tr>
+
+                </thead>
+                <tbody>
+                    @foreach (var item in DataNasehat)
+                    {
+                    <tr>
+                        <td>@item.Tanggal.ToString("dd/MM/yyyy")</td>
+                        <td>@item.Topik</td>
+
+                        <td>@item.Penasehat1</td>
+
+                        <td>@item.Penasehat2</td>
+
+
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </body>
+}
+</div>
+</div>
+</div>
+@code {
+    MoslemToolkit.Data.KalenderKelompokService service;
+    MoslemToolkit.Data.NasehatService nasehatService;
+    List<Nasehat> DataNasehat;
+
+    string customHeader = string.Empty;
+    List<KalenderKelompok> DataKalenderKelompok;
+    KalenderKelompok itemObject = new KalenderKelompok();
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    string UserName;
+    DateTime current;
+    EventCalendar calendar;
+    string DivContainer="DivContainer1";
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new KalenderKelompokService();
+        if (nasehatService == null) nasehatService = new NasehatService();
+        current = DateHelper.GetLocalTimeNow();
+        
+    }
+    async Task Cetak()
+    {
+        await jsRuntime.InvokeVoidAsync("HtmlToImage", DivContainer);
+    }
+    void RefreshData()
+    {
+        calendar.ClearEvent();
+        DataKalenderKelompok = service.GetAllData(calendar.StartDate,calendar.EndDate);
+        foreach(var item in DataKalenderKelompok)
+        {
+            for(DateTime day = item.TanggalMulai; day <= item.TanggalSelesai; day = day.AddDays(1))
+            {
+                calendar.AddEvent(day,item.Kegiatan);
+            }
+        }
+        DataNasehat = nasehatService.GetAllData(calendar.StartDate,calendar.EndDate);
+    }
+
+    void DateChanged(object sender, DateChangedEventArgs e)
+    {
+        RefreshData();
+        StateHasChanged();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (DataKalenderKelompok != null && DataKalenderKelompok.Count > 0)
+        {
+
+            await jsRuntime.InvokeAsync<object>("TestDataTablesAdd", "#gridData");
+        }
+        
+        if (DataNasehat != null && DataNasehat.Count > 0)
+        {
+
+            await jsRuntime.InvokeAsync<object>("TestDataTablesAdd", "#gridData2");
+        }
+        if (firstRender)
+        {
+            if (string.IsNullOrEmpty(UserName))
+            {
+                try
+                {
+                    UserName = await localStorage.GetItemAsync<string>(AppConstants.NameKey);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+                if (string.IsNullOrEmpty(UserName))
+                {
+                    NavMgr.NavigateTo($"/login");
+                }
+            }
+
+            //load calender
+            if (calendar != null)
+            {
+                calendar.CurrentDate = current;
+                calendar.DateChanged += DateChanged;
+                RefreshData();
+                calendar.Refresh();
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async System.Threading.Tasks.Task applyPager(string TableName)
+    {
+        await jsRuntime.InvokeAsync<object>("applyPager", TableName);
+    }
+
+}

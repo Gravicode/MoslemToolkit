@@ -1,0 +1,112 @@
+﻿@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject IJSRuntime jsRuntime
+@*@namespace MoslemToolkit.Pages.Master*@
+@using System.IO
+@inject IToastService toastService
+
+<div class="modal" tabindex="-1" role="dialog" id="cicilanModal">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@CustomHeader</h5>
+
+
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@TaskObject" OnValidSubmit="@HandleValidSubmit">
+                    <DataAnnotationsValidator />
+
+                    <div class="form-group">
+                        <label for="no">No</label>
+                        <input type="hidden" @bind-value="@TaskObject.Id" />
+                        <InputDate id="no" class="form-control" @bind-Value="@TaskObject.Tanggal" />
+                        <ValidationMessage For="@(() => TaskObject.Tanggal)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="nama">Dibayar Oleh</label>
+                        <InputText id="nama" class="form-control" @bind-Value="@TaskObject.DibayarOleh" />
+                        <ValidationMessage For="@(() => TaskObject.DibayarOleh)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="jml">Jumlah Bayar (Rp)</label>
+                        <InputNumber id="jml" class="form-control" @bind-Value="@TaskObject.Jumlah" />
+                        <ValidationMessage For="@(() => TaskObject.Jumlah)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="ket">Keterangan</label>
+                        <InputTextArea id="ket" class="form-control" @bind-Value="@TaskObject.Keterangan" />
+                        <ValidationMessage For="@(() => TaskObject.Keterangan)" />
+                    </div>
+
+
+
+                    <button type="submit" class="btn btn-primary btn-sm mt-1">Simpan</button>
+                    <button type="button" class="btn btn-secondary btn-sm mt-1" data-dismiss="modal">Cancel</button>
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    public string FileUrl { get; set; }
+    [Parameter]
+    public RenderFragment CustomHeader { get; set; }
+    [Parameter]
+    public Cicilan TaskObject { get; set; }
+
+    [Parameter]
+    public Pinjaman PinjamanParent { get; set; }
+
+    [Parameter]
+    public Action DataChanged { get; set; }
+    MoslemToolkit.Data.CicilanService service;
+    MoslemToolkit.Data.PinjamanService Pinjamanservice;
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new CicilanService();
+        if (Pinjamanservice == null) Pinjamanservice = new  PinjamanService();
+
+    }
+    private async void HandleValidSubmit()
+    {
+
+        if(TaskObject.Jumlah + PinjamanParent.Cicilans?.Sum(x=>x.Jumlah) >= PinjamanParent.JumlahPinjaman)
+        {
+            PinjamanParent.Status = StatusPinjaman.Lunas;
+        }
+        else
+        {
+            PinjamanParent.Status = StatusPinjaman.BelumLunas;
+        }
+        if (TaskObject.Id == 0)
+        {
+
+            service.InsertData(TaskObject);
+
+        }
+        else
+        {
+            service.UpdateData(TaskObject);
+        }
+        Pinjamanservice.UpdateData(PinjamanParent);
+
+        await CloseTaskModal();
+        DataChanged?.Invoke();
+    }
+
+
+
+    private async Task CloseTaskModal()
+    {
+        await jsRuntime.InvokeAsync<object>("CloseModal", "cicilanModal");
+    }
+
+
+}

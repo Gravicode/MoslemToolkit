@@ -1,0 +1,97 @@
+﻿@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject IJSRuntime jsRuntime
+@*@namespace MoslemToolkit.Pages.Master*@
+@using System.IO
+@inject IToastService toastService
+
+<div class="modal" tabindex="-1" role="dialog" id="taskModal">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@CustomHeader</h5>
+
+
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@TaskObject" OnValidSubmit="@HandleValidSubmit">
+                    <DataAnnotationsValidator />
+
+                    <div class="form-group">
+                        <label for="nama">Nama Akun</label>
+                        <input type="hidden" @bind-value="@TaskObject.Id" />
+                        <InputText id="nama" class="form-control" @bind-Value="@TaskObject.Nama" />
+                        <ValidationMessage For="@(() => TaskObject.Nama)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="keterangan">Keterangan</label>
+                        <InputTextArea id="keterangan" class="form-control" @bind-Value="@TaskObject.Keterangan" />
+                        <ValidationMessage For="@(() => TaskObject.Keterangan)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="tgldari">Dari Tanggal</label>
+                        <InputDate id="tgldari" class="form-control" @bind-Value="@TaskObject.DariTanggal" />
+                        <ValidationMessage For="@(() => TaskObject.DariTanggal)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="sampaintgl">Sampai Tanggal</label>
+                        <InputDate id="sampaitgl" class="form-control" @bind-Value="@TaskObject.SampaiTanggal" />
+                        <ValidationMessage For="@(() => TaskObject.SampaiTanggal)" />
+                    </div>
+
+
+                    <button type="submit" class="btn btn-primary btn-sm mt-1">Simpan</button>
+                    <button type="button" class="btn btn-secondary btn-sm mt-1" data-dismiss="modal">Cancel</button>
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    public string FileUrl { get; set; }
+    [Parameter]
+    public RenderFragment CustomHeader { get; set; }
+    [Parameter]
+    public AkunTabunganJamaah TaskObject { get; set; }
+    [Parameter]
+    public Action DataChanged { get; set; }
+    MoslemToolkit.Data.AkunTabunganJamaahService service;
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new AkunTabunganJamaahService();
+
+    }
+    private async void HandleValidSubmit()
+    {
+
+
+        if (TaskObject.Id == 0)
+        {
+
+            service.InsertData(TaskObject);
+
+        }
+        else
+        {
+            service.UpdateData(TaskObject);
+        }
+
+        await CloseTaskModal();
+        DataChanged?.Invoke();
+    }
+
+
+
+    private async Task CloseTaskModal()
+    {
+        await jsRuntime.InvokeAsync<object>("CloseModal", "taskModal");
+    }
+
+
+}

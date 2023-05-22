@@ -1,0 +1,145 @@
+﻿@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@inject IJSRuntime jsRuntime
+
+<li class="nav-item">
+    <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#menu1"
+       aria-expanded="true" aria-controls="menu1">
+        <i class="fas fa-fw fa-hands"></i>
+        <span>Data Pinjaman</span>
+    </a>
+    <div id="menu1" class="collapse" aria-labelledby="headingmenu1"
+         data-parent="#accordionSidebar">
+        <div class="bg-white py-2 collapse-inner rounded">
+            <h6 class="collapse-header">Pilih:</h6>
+            <a class="collapse-item" href="/master/Pinjaman">Pinjaman Uang</a>
+        </div>
+    </div>
+</li>
+
+
+<li class="nav-item">
+    <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#menu2"
+       aria-expanded="true" aria-controls="menu2">
+        <i class="fas fa-fw fa-wallet"></i>
+        <span>Tabungan Jamaah</span>
+    </a>
+    <div id="menu2" class="collapse" aria-labelledby="headingmenu2"
+         data-parent="#accordionSidebar">
+        <div class="bg-white py-2 collapse-inner rounded">
+            <h6 class="collapse-header">Pilih:</h6>
+            <a class="collapse-item" href="/master/akuntabunganjamaah">Akun Tabungan Jamaah</a>
+            <a class="collapse-item" href="/master/tabunganjamaah">Tabungan Jamaah</a>
+        </div>
+    </div>
+</li>
+
+
+<li class="nav-item">
+    <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#menu3"
+       aria-expanded="true" aria-controls="menu3">
+        <i class="fas fa-fw fa-database"></i>
+        <span>Database</span>
+    </a>
+    <div id="menu3" class="collapse" aria-labelledby="headingmenu3"
+         data-parent="#accordionSidebar">
+        <div class="bg-white py-2 collapse-inner rounded">
+            <h6 class="collapse-header">Pilih:</h6>
+            <a class="collapse-item" href="/master/profilinfaqjamaah">Profil Infaq Jamaah</a>
+        </div>
+    </div>
+</li>
+
+
+<li class="nav-item">
+    <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#menu4"
+       aria-expanded="true" aria-controls="menu4">
+        <i class="fas fa-fw fa-hand-holding-heart"></i>
+        <span>Sodakoh Khusus</span>
+    </a>
+    <div id="menu4" class="collapse" aria-labelledby="headingmenu4"
+         data-parent="#accordionSidebar">
+        <div class="bg-white py-2 collapse-inner rounded">
+            <h6 class="collapse-header">Pilih:</h6>
+            <a class="collapse-item" href="/master/akunsodakohkhusus">Akun Sodakoh Khusus</a>
+            <a class="collapse-item" href="/master/setoransodakohkhusus">Setoran Sodakoh Uang</a>
+            <a class="collapse-item" href="/master/setoransodakohkhususbarang">Setoran Sodakoh Barang</a>
+        
+        </div>
+    </div>
+</li>
+
+<li class="nav-item">
+    <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#menu5"
+       aria-expanded="true" aria-controls="menu5">
+        <i class="fas fa-fw fa-gem"></i>
+        <span>Infaq dan Sodakoh</span>
+    </a>
+    <div id="menu5" class="collapse" aria-labelledby="headingmenu5"
+         data-parent="#accordionSidebar">
+        <div class="bg-white py-2 collapse-inner rounded">
+            <h6 class="collapse-header">Pilih:</h6>
+            <a class="collapse-item" href="/master/akuninfaqsodakoh">Akun Infaq dan Sodakoh</a>
+            <a class="collapse-item" href="/master/HeaderPenerimaanInfaqSodakoh">Penerimaan Infaq Sodakoh</a>
+            <a class="collapse-item" href="/master/PengeluaranInfaqSodakoh">Pengeluaran Infaq Sodakoh</a>
+        
+        </div>
+    </div>
+</li>
+
+<li class="nav-item">
+    <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#menu6"
+       aria-expanded="true" aria-controls="menu6">
+        <i class="fas fa-fw fa-file"></i>
+        <span>Laporan KU</span>
+    </a>
+    <div id="menu6" class="collapse" aria-labelledby="headingmenu6"
+         data-parent="#accordionSidebar">
+        <div class="bg-white py-2 collapse-inner rounded">
+            <h6 class="collapse-header">Pilih:</h6>
+            <a class="collapse-item" href="/report/ku">Laporan KU</a>
+            <a class="collapse-item" href="/report/infaq-bulanan">Infaq Bulanan</a>
+        
+        </div>
+    </div>
+</li>
+
+@code {
+    bool collapseNavMenu = true;
+    bool HasLogin = false;
+    string NavMenuCssClass => (collapseNavMenu ? "collapse" : "");
+    string UserName { set; get; }
+    void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                UserName = await localStorage.GetItemAsync<string>(AppConstants.NameKey);
+
+            }
+            catch
+            {
+
+            }
+
+            if (!string.IsNullOrEmpty(UserName) && UserName == AppConstants.USER_KU)
+            {
+                HasLogin = true;
+                StateHasChanged();
+            }
+
+        }
+
+        //await jsRuntime.InvokeAsync<object>("setMenuStyle");
+    }
+}

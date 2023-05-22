@@ -1,0 +1,72 @@
+@font-face {
+    font-family: 'Bahnschrift';
+    src: url('Bahnschrift.woff2') format('woff2'),
+         url('Bahnschrift.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+@font-face {
+    font-family: 'raleway';
+    src: url('raleway-bold-webfont.woff2') format('woff2'),
+         url('raleway-bold-webfont.woff') format('woff');
+    font-weight: bold;
+    font-style: normal;
+}
+@font-face {
+    font-family: 'raleway';
+    src: url('raleway-bolditalic-webfont.woff2') format('woff2'),
+         url('raleway-bolditalic-webfont.woff') format('woff');
+    font-weight: bold;
+    font-style: italic;
+
+}
+@font-face {
+    font-family: 'raleway';
+    src: url('raleway-italic-webfont.woff2') format('woff2'),
+         url('raleway-italic-webfont.woff') format('woff');
+    font-weight: normal;
+    font-style: italic;
+}
+@font-face {
+    font-family: 'raleway';
+    src: url('raleway-light-webfont.woff2') format('woff2'),
+         url('raleway-light-webfont.woff') format('woff');
+    font-weight: 200;
+    font-style: normal;
+
+}
+@font-face {
+    font-family: 'raleway';
+    src: url('raleway-lightitalic-webfont.woff2') format('woff2'),
+         url('raleway-lightitalic-webfont.woff') format('woff');
+    font-weight: 200;
+    font-style: italic;
+}
+@font-face {
+    font-family: 'raleway';
+    src: url('raleway-regular-webfont.woff2') format('woff2'),
+         url('raleway-regular-webfont.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+@font-face {
+    font-family: 'raleway';
+    src: url('raleway-thinitalic-webfont.woff2') format('woff2'),
+         url('raleway-thinitalic-webfont.woff') format('woff');
+    font-weight: 300;
+    font-style: italic;
+}
+@font-face {
+    font-family: 'raleway';
+    src: url('raleway-medium-webfont.woff2') format('woff2'),
+         url('raleway-medium-webfont.woff') format('woff');
+    font-weight: 500;
+    font-style: normal;
+}
+@font-face {
+    font-family: 'raleway';
+    src: url('raleway-mediumitalic-webfont.woff2') format('woff2'),
+         url('raleway-mediumitalic-webfont.woff') format('woff');
+    font-weight: 500;
+    font-style: italic;
+}

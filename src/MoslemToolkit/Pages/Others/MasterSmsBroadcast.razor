@@ -1,0 +1,210 @@
+﻿@page "/master/SmsBroadcast"
+
+@inject IJSRuntime jsRuntime
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@using MoslemToolkit.Helpers
+
+@inject NavigationManager NavMgr
+@*@namespace MoslemToolkit.Pages.Master*@
+@inject IToastService toastService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@using System.IO
+
+<h1>Sms Broadcast</h1>
+
+<p>Gunakan halaman ini untuk mengirim Sms Broadcast.</p>
+
+@if (DataSmsBroadcast == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+
+    <body onbeforeunload="TestDataTablesRemove('#gridData')">
+        <div class="table-responsive">
+            <table id="gridData" name="gridData" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Judul</th>
+                        <th>Pesan</th>
+                        <th>Waktu Kirim</th>
+                        <th>Masa Aktif</th>
+                        <th>Berulang</th>
+                        <th>Jumlah Terkirim</th>
+                        <th>Dikirim Ke</th>
+                        <th>Hari</th>
+                        <th>Actions</th>
+                    </tr>
+
+                </thead>
+                <tbody>
+                    @foreach (var item in DataSmsBroadcast)
+                    {
+                    <tr>
+                        <td>@item.Judul</td>
+                        <td>@item.Pesan</td>
+                        <td>@item.WaktuKirim</td>
+                        <td>@item.AktifDari.ToString("dd/MMM/yyyy HH:mm") - @item.AktifSampai.ToString("dd/MMM/yyyy HH:mm")</td>
+                        <td>@(item.Berulang?"Ya":"Tidak")</td>
+                        <td>@item.Terkirim</td>
+                        <td>
+                            @if (item.DikirimKe != null)
+                            {
+                                @(string.Join(", ", item.DikirimKe.ToList()))
+                            }
+                        </td>
+                        <td>
+                            @if (item.Hari != null)
+                            {
+                                    var haris = new List<string>();
+                                    item.Hari.ForEach(x=> { haris.Add(TimeHelpers.GetDayName(x)); } );
+                                @(string.Join(", ", haris ))
+                            }
+                        </td>
+                        <td>
+
+                            <input type="button" class="btn btn-primary" @onclick="(() => PrepareForEdit(item))" data-toggle="modal" data-target="#taskModal" value="Ubah" />
+                            <input type="button" class="btn btn-danger" @onclick="(() => PrepareForDelete(item))" data-toggle="modal" data-target="#confirmDeleteModal" value="Hapus" />
+
+                            <input type="button" class="btn btn-info" @onclick="(() => KirimSms(item))" value="Kirim SMS" />
+
+                        </td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </body>
+}
+<div>
+    <input type="button" data-toggle="modal" data-target="#taskModal" class="btn btn-primary" value="Tambah Sms Broadcast" @onclick="(() => InitializeitemObject())" />
+</div>
+<ConfirmDialog OnClick="@Delete" />
+<SmsBroadcastDetail @ref="detail" TaskObject=@itemObject DataChanged="@DataChanged">
+    <CustomHeader>@customHeader</CustomHeader>
+</SmsBroadcastDetail>
+
+@code {
+    SmsBroadcastDetail detail;
+    MoslemToolkit.Data.SmsBroadcastService service;
+    string customHeader = string.Empty;
+    List<SmsBroadcastData> DataSmsBroadcast;
+    SmsBroadcastData itemObject = new SmsBroadcastData();
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    string UserName;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new SmsBroadcastService();
+
+        DataSmsBroadcast = service.GetAllData();
+
+
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (DataSmsBroadcast != null && DataSmsBroadcast.Count > 0)
+        {
+
+            await jsRuntime.InvokeAsync<object>("TestDataTablesAdd", "#gridData");
+        }
+        if (firstRender)
+        {
+            if (string.IsNullOrEmpty(UserName))
+            {
+                try
+                {
+                    UserName = await localStorage.GetItemAsync<string>(AppConstants.NameKey);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+                if (string.IsNullOrEmpty(UserName))
+                {
+                    NavMgr.NavigateTo($"/login");
+                }
+                else
+                {
+
+                }
+            }
+        }
+    }
+
+    private void InitializeitemObject()
+    {
+
+        itemObject = new SmsBroadcastData();
+        RandomGenerator gen = new RandomGenerator();
+        var now = DateHelper.GetLocalTimeNow();
+        itemObject.WaktuKirim = new TimeSpan(now.Hour,now.Minute,now.Second);
+        itemObject.AktifDari = now;
+        itemObject.AktifSampai = new DateTime(itemObject.AktifDari.Year,itemObject.AktifDari.Month,itemObject.AktifDari.Day,23,59,59);
+        itemObject.Terkirim = 0;
+        itemObject.Judul = "Pemberitahuan";
+
+        customHeader = "Tambah Sms Broadcast";
+    }
+    private async void DataChanged()
+    {
+        DataSmsBroadcast = service.GetAllData();
+        StateHasChanged();
+    }
+
+    private void PrepareForEdit(SmsBroadcastData item)
+    {
+        customHeader = "Ubah SmsBroadcast";
+        itemObject = item;
+
+    }
+    private void PrepareForDelete(SmsBroadcastData item)
+    {
+        itemObject = item;
+    }
+    private async Task KirimSms(SmsBroadcastData item)
+    {
+        try
+        {
+            var counter = 0;
+            var loop = Parallel.ForEach(item.DikirimKe, async(number) =>
+            {
+                var res = await SmsService.SendSms(item.Pesan, number);
+                if (res) counter++;
+            });
+            if (loop.IsCompleted)
+            {
+                item.Terkirim += counter;
+                service.UpdateData(item);
+                StateHasChanged();
+                toastService.ShowInfo("SMS Terkirim");
+            }
+        }
+        catch (Exception ex)
+        {
+
+            toastService.ShowError("Pengiriman SMS Gagal:"+ex);
+        }
+
+
+    }
+
+    private async Task Delete()
+    {
+        var task = service.DeleteData(itemObject.Id);
+        await jsRuntime.InvokeAsync<object>("CloseModal", "confirmDeleteModal");
+        DataSmsBroadcast = service.GetAllData();
+        itemObject = new SmsBroadcastData() { Id = -1 };
+    }
+
+    private async System.Threading.Tasks.Task applyPager(string TableName)
+    {
+        await jsRuntime.InvokeAsync<object>("applyPager", TableName);
+    }
+
+}

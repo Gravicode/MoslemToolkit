@@ -1,0 +1,66 @@
+﻿@page "/master/report-buku"
+@layout MainLayoutPJKBM
+
+@using System.IO
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@using System.Data
+@inject IToastService toastService
+
+@inject IJSRuntime jsRuntime
+
+<h2>Cetak Buku PJKBM</h2>
+ <hr />
+    <div class="row">
+        <div class="col col-12">
+            <div class="form-group">
+                <label for="tahun-dari" class="col-sm-2 col-form-label">Dari Tahun</label>
+                <div class="col-sm-11">
+                    <input type="number" @bind="param.DariTahun" id="tahun">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="tahun-ke" class="col-sm-2 col-form-label">Sampai Tahun</label>
+                <div class="col-sm-11">
+                    <input type="number" @bind="param.SampaiTahun" id="tahun-ke">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="tanggal-dari" class="col-sm-2 col-form-label">Dari Tanggal</label>
+                <div class="col-sm-11">
+                    <input type="date" @bind="param.DariTanggal" id="tanggal-dari">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="tanggal-ke" class="col-sm-2 col-form-label">Sampai Tanggal</label>
+                <div class="col-sm-11">
+                    <input type="date" @bind="param.SampaiTanggal" id="tanggal-ke">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="kelas" class="col-sm-2 col-form-label">Kelas</label>
+                <div class="col-sm-11">
+                    <select @bind="param.KelasId">
+                            <option value="-1">Pilih</option>
+                            @foreach (var template in DataKelas)
+                            {   
+                                    <option value=@template.Id>@template.Nama</option>
+                            }
+                    </select>
+                </div>
+            </div>
+            <button @onclick="Cetak" class="btn btn-success">Cetak Buku</button>
+            <div class="alert alert-info mt-2">
+            @if (Progress > 0)
+            {
+                <div class="progress">
+                  <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="@Progress" aria-valuemin="0" aria-valuemax="100" style="width: @Progress%"></div>
+                </div>
+            }
+                @PesanStatus
+            </div>
+        </div>
+
+    </div>
+    <hr />
+

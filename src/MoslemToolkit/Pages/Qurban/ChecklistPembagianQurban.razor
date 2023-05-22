@@ -1,0 +1,138 @@
+﻿
+@page "/checklist-qurban"
+<h3>Data Qurban @Tahun</h3>
+
+@using System.IO
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@using System.Data
+@inject IToastService toastService
+@inject IJSRuntime jsRuntime
+
+
+<div id="canvas1" style="background-color:white;" class="container-fluid">
+
+    <div class="row">
+        <div class="col col-12">
+            <div class="form-group">
+                <label for="nama" class="col-sm-2 col-form-label">Tahun</label>
+                <div class="col-sm-11">
+                    <input type="number" @bind="Tahun" id="tahun">
+                </div>
+            </div>
+            <button @onclick="Refresh" class="btn btn-success">Refresh</button>
+        </div>
+
+    </div>
+    <hr />
+
+    <div class="row">
+        <div class="col col-12">
+            <button class="btn btn-info mr-1 mb-1" @onclick="() => { DownloadFile(); }">Download Data</button>
+            <button class="btn btn-warning mr-1 mb-1" @onclick="CaptureScreen">Download As Image</button>
+            <button class="btn btn-success mr-1 mb-1" @onclick="CetakReport">Download As Pdf</button>
+            @*<button class="btn btn-info mr-1 mb-1" @onclick="LoadState">Load State</button>
+            <button class="btn btn-info mr-1 mb-1" @onclick="SaveState">Save State</button>*@
+        </div>
+    </div>
+     <div class="row">
+        <div class="col col-12 alert alert-info mt-2">
+            @if (Progress > 0)
+            {
+                <div class="progress">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="@Progress" aria-valuemin="0" aria-valuemax="100" style="width: @Progress%"></div>
+                </div>
+            }
+            @PesanStatus
+        </div>
+    </div>
+    <hr />
+
+
+    <h3>Data Pembagian Hewan Qurban</h3>
+    <div class="form-group row">
+        <label for="nama" class="col-sm-2 col-form-label">Nama</label>
+        <div class="col-sm-11">
+            <input type="text" @bind="keyword" @bind:event="oninput" id="nama">
+        </div>
+    </div>
+    <div class="row">
+
+        <div class="table-responsive">
+
+
+            <table id="gridData" name="gridData" class="table table-striped w-auto">
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>Nama</th>
+                        <th>Golongan</th>
+                        <th>Status</th>
+                        <th>KP</th>
+                        <th>Kantong BL</th>
+                        <th>Pembagian (kg)</th>
+                        <th>BL</th>
+                        <th>Kaki</th>
+                        <th>Kepala</th>
+                        <th>Tulang</th>
+                        <th>Jerohan</th>
+                        <th>Apresiasi (kg)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (DataPembagianKP != null)
+                    {
+                        int counter = 1;
+
+                        foreach (var item in DataPembagianKP)
+                        {
+                            <tr>
+                                <td colspan="13"><b>BERAT @item.Berat Kg / KANTONG @item.KP</b></td>
+                            </tr>
+                            foreach (var row in item.Pembagian)
+                            {
+                                <tr>
+                                    <td>@(counter++)</td>
+                                    <td>@row.Nama</td>
+                                    <td>@row.Golongan</td>
+                                    <td>@row.Status</td>
+                                    <td>@row.KP</td>
+                                    <td>@row.Kantong</td>
+                                    <td>@row.Pembagian</td>
+                                    <td>@row.BL</td>
+                                    <td>@row.KAKI</td>
+                                    <td>@row.KEPALA</td>
+                                    <td>@row.TULANG</td>
+                                    <td>@row.JEROHAN</td>
+                                    <td>@row.APRESIASI</td>
+                                </tr>
+                            }
+                            <tr>
+                                <td colspan="6">Total</td>
+                                <td><b>@item.Pembagian?.Sum(x => x.Pembagian).ToString("n2") kg</b></td>
+                                <td><b>@item.Pembagian?.Sum(x => x.BL).ToString("n2") kg</b></td>
+
+                                <td><b>@item.Pembagian?.Sum(x => x.KAKI).ToString("n2")</b></td>
+                                <td><b>@item.Pembagian?.Sum(x => x.KEPALA).ToString("n2")</b></td>
+                                <td><b>@item.Pembagian?.Sum(x => x.TULANG).ToString("n2")</b></td>
+                                <td><b>@item.Pembagian?.Sum(x => x.JEROHAN).ToString("n2")</b></td>
+                                <td><b>@item.Pembagian?.Sum(x => x.APRESIASI).ToString("n2") kg</b></td>
+                            </tr>
+                        }
+
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="13">
+                                Loading
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+        </div>
+
+    </div>
+</div>

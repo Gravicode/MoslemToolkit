@@ -1,0 +1,166 @@
+﻿@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@using System.Linq
+@inject IJSRuntime jsRuntime
+@*@namespace MoslemToolkit.Pages.Master*@
+@using System.IO
+@inject IToastService toastService
+
+<div class="modal" tabindex="-1" role="dialog" id="taskModal">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@CustomHeader</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="semester">Semester</label>
+                    <input type="number" id="semester" class="form-control" @bind="@semester" />
+
+                </div>
+                <div class="form-group">
+                    <label for="tahun">Tahun</label>
+                    <input type="number" id="tahun" class="form-control" @bind="@tahun" />
+
+                </div>
+                @if (DaftarMateri != null)
+                {
+                    <div class="table-responsive" style="overflow-y:auto;">
+                        <table id="gridData2" name="gridData" class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Pilih</th>
+                                    <th>No</th>
+                                    <th>Bab</th>
+                                    <th>Nama</th>
+                                    <th>Keterangan</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in DaftarMateri)
+                                {
+                                    <tr>
+                                        <td><input type="checkbox" @bind="@item.Selected"></td>
+                                        <td>@item.MateriPerKelasItem.No</td>
+                                        <td>@item.MateriPerKelasItem.Bab?.Nama</td>
+                                        <td>@item.MateriPerKelasItem.Nama</td>
+                                        <td>@item.MateriPerKelasItem.Keterangan</td>
+
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                <button type="submit" class="btn btn-primary" @onclick="HandleValidSubmit">Simpan</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+<ConfirmDialog ModalId="dialogDelete2" @ref="deleteDialog2" OnClick="@ProcessData" />
+
+@code {
+    ConfirmDialog deleteDialog2;
+
+    int semester=1, tahun=DateTime.Now.Year;
+    public class DataMateriPerKelas
+    {
+        public bool Selected { set; get; }
+        public Materi MateriPerKelasItem { set; get; }
+    }
+    List<DataMateriPerKelas> DaftarMateri;
+    public string FileUrl { get; set; }
+    [Parameter]
+    public RenderFragment CustomHeader { get; set; }
+    [Parameter]
+    public Kelas TaskObject { get; set; }
+    [Parameter]
+    public Action DataChanged { get; set; }
+    MoslemToolkit.Data.MateriPerKelasService service;
+    MoslemToolkit.Data.MateriService MateriSvc;
+    KelasService KelasSvc;
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new MateriPerKelasService();
+        if (KelasSvc == null) KelasSvc = new KelasService();
+        if (MateriSvc == null) MateriSvc = new MateriService();
+        Refresh();
+    }
+
+    public void Refresh()
+    {
+        if (TaskObject == null) return;
+        var dict = new HashSet<long>();
+        var selectedMateri = service.GetDataByKelasId(TaskObject.Id);
+        selectedMateri.ForEach(c => { dict.Add(c.MateriId); });
+        if (DaftarMateri == null)
+        {
+
+            var allMateriPerKelas = MateriSvc.GetAllData();
+            DaftarMateri = new List<DataMateriPerKelas>();
+            foreach (var item in allMateriPerKelas)
+            {
+                DaftarMateri.Add(new DataMateriPerKelas() { Selected = dict.Contains(item.Id), MateriPerKelasItem = item });
+            }
+        }
+        else
+        {
+           
+            foreach (var item in DaftarMateri)
+            {
+                item.Selected = dict.Contains(item.MateriPerKelasItem.Id);
+            }
+        }
+
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await jsRuntime.InvokeAsync<object>("TestDataTablesAdd", "#gridData2");
+    }
+    private async void HandleValidSubmit()
+    {
+        var materis = new List<Materi>();
+        var selected = DaftarMateri.Where(x => x.Selected).ToList();
+        selected.ForEach(x =>
+        {
+            materis.Add(x.MateriPerKelasItem);
+        });
+        var nilaiExists = service.CheckIfMateriHasNilai(TaskObject, materis);
+        if(nilaiExists){
+                deleteDialog2.Message = "Sudah ada nilai siswa terkait perubahan materi ini, yakin ingin melanjutkan ?";
+
+            }
+            else
+            {
+                deleteDialog2.Message = "Yakin ingin mengubah data ini ?";
+            }
+        await jsRuntime.InvokeVoidAsync("ShowModal", deleteDialog2.ModalId);
+
+    }
+
+    async void ProcessData(){
+        //var removed = 
+        var materis = new List<Materi>();
+        var selected = DaftarMateri.Where(x => x.Selected).ToList();
+        selected.ForEach(x =>
+        {
+            materis.Add(x.MateriPerKelasItem);
+        });
+        service.UpdateData(TaskObject, materis,semester,tahun);
+
+        await CloseTaskModal();
+        DataChanged?.Invoke();
+        await jsRuntime.InvokeVoidAsync("CloseModal", deleteDialog2.ModalId);
+    }
+
+    private async Task CloseTaskModal()
+    {
+        await jsRuntime.InvokeAsync<object>("CloseModal", "taskModal");
+    }
+
+
+}

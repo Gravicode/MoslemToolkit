@@ -1,0 +1,169 @@
+﻿@page "/master/Tim"
+
+@inject IJSRuntime jsRuntime
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject NavigationManager NavMgr
+@*@namespace MoslemToolkit.Pages.Master*@
+@inject IToastService toastService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+
+@using System.IO
+<h1>Data Tim 4S</h1>
+
+<p>Gunakan halaman ini untuk menyimpan data Tim 4S.</p>
+
+@if (DataTim == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <body onbeforeunload="TestDataTablesRemove('#gridData')">
+        <div class="table-responsive">
+            <table id="gridData" name="gridData" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Urutan</th>
+                        <th>Dapu'an</th>
+                        <th>Nama</th>
+                        <th>Telepon</th>
+                        <th>Alamat</th>
+                        <th>Actions</th>
+                    </tr>
+
+                </thead>
+                <tbody>
+                    @foreach (var item in DataTim)
+                    {
+                        <tr>
+                            <td>@item.Urutan</td>
+                            <td>@item.Tugas</td>
+                            <td>@item.Nama</td>
+                            <td>@item?.Telepon</td>
+                            <td>@item?.Alamat</td>
+
+                            <td>
+
+                                @if (HasLogin)
+                                {
+                                    <input type="button" class="btn btn-primary" @onclick="(() => PrepareForEdit(item))" data-toggle="modal" data-target="#taskModal" value="Ubah" />
+                                    <input type="button" class="btn btn-danger" @onclick="(() => PrepareForDelete(item))" data-toggle="modal" data-target="#confirmDeleteModal" value="Hapus" />
+                                }
+                            </td>
+
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </body>
+}
+@if (HasLogin)
+{
+    <div>
+        <input type="button" data-toggle="modal" data-target="#taskModal" class="btn btn-primary" value="Tambah Tim" @onclick="(() => InitializeitemObject())" />
+    </div>
+}
+<ConfirmDialog OnClick="@Delete" />
+<TimDetail @ref="detail" TaskObject=@itemObject DataChanged="@DataChanged">
+    <CustomHeader>@customHeader</CustomHeader>
+</TimDetail>
+
+@code {
+    bool HasLogin = false;
+    TimDetail detail;
+    MoslemToolkit.Data.TimService service;
+    string customHeader = string.Empty;
+    List<Tim> DataTim;
+    Tim itemObject = new Tim();
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    string UserName;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new TimService();
+
+        DataTim = service.GetAllData();
+
+
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (DataTim != null && DataTim.Count > 0)
+        {
+
+            await jsRuntime.InvokeAsync<object>("TestDataTablesAdd", "#gridData");
+        }
+        if (firstRender)
+        {
+            if (string.IsNullOrEmpty(UserName))
+            {
+                try
+                {
+                    UserName = await localStorage.GetItemAsync<string>(AppConstants.NameKey);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+                if (string.IsNullOrEmpty(UserName))
+                {
+                    NavMgr.NavigateTo($"/login");
+                }
+                else if (!string.IsNullOrEmpty(UserName) && UserName == AppConstants.USER_ADMIN)
+                {
+                    HasLogin = true;
+                    StateHasChanged();
+                }
+            }
+        }
+    }
+
+    private void InitializeitemObject()
+    {
+
+        itemObject = new Tim();
+       
+
+
+        //detail.DocumentUrl = "";
+
+        //itemObject.Id = -1;
+
+        customHeader = "Tambah Tim 4S";
+    }
+    private async void DataChanged()
+    {
+        DataTim = service.GetAllData();
+        StateHasChanged();
+    }
+
+    private void PrepareForEdit(Tim item)
+    {
+        customHeader = "Ubah Data Tim 4S";
+        itemObject = item;
+        //detail.DocumentUrl = item.DocumentUrl;
+    }
+    private void PrepareForDelete(Tim item)
+    {
+        itemObject = item;
+    }
+    private async Task Delete()
+    {
+        var task = service.DeleteData(itemObject.Id);
+        await jsRuntime.InvokeAsync<object>("CloseModal", "confirmDeleteModal");
+        DataTim = service.GetAllData();
+        itemObject = new Tim() { Id = -1 };
+    }
+
+    private async System.Threading.Tasks.Task applyPager(string TableName)
+    {
+        await jsRuntime.InvokeAsync<object>("applyPager", TableName);
+    }
+
+}

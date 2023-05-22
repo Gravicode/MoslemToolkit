@@ -1,0 +1,394 @@
+﻿@page "/data-qurban"
+<h3>Data Qurban @Tahun</h3>
+
+@using System.IO
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@using System.Data
+@inject IToastService toastService
+@inject NavigationManager NavMgr
+@inject IJSRuntime jsRuntime
+
+<div id="canvas1" style="background-color:white;" class="container-fluid">
+
+    <div class="row">
+        <div class="col col-12">
+            <div class="form-group">
+                <label for="nama" class="col-sm-2 col-form-label">Tahun</label>
+                <div class="col-sm-11">
+                    <input type="number" @bind="Tahun" id="tahun">
+                </div>
+            </div>
+            <button @onclick="RefreshData" class="btn btn-success">Refresh</button>
+        </div>
+
+    </div>
+    <hr />
+    <div class="row">
+        <div class="col col-12">
+            <div class="form-group">
+                <label for="nim">Upload Data Qurban</label>
+                <b><a href="/template/QurbanTemplate.xlsx">Download template data qurban</a></b>
+                <div class="alert alert-warning"> pilih dokumen lalu tunggu sampai dokumen selesai di upload.</div>
+
+                <BlazorInputFile.InputFile OnChange="HandleFileSelected" />
+
+            </div>
+        </div>
+
+    </div>
+    <div class="row">
+        <div class="col col-12">
+            <button class="btn btn-primary mr-1 mb-1" @onclick="Sync">Sync Data to Cloud</button>
+            <button class="btn btn-info mr-1 mb-1" @onclick="()=> { DownloadFile(TipeDataQurban.Pembagian); }">Download Data Pembagian</button>
+            <button class="btn btn-info mr-1 mb-1" @onclick="()=> { DownloadFile(TipeDataQurban.BL); }">Download Data BL</button>
+            <button class="btn btn-info mr-1 mb-1" @onclick="()=> { DownloadFile(TipeDataQurban.HewanQurban); }">Download Data Hewan Qurban</button>
+            <button class="btn btn-warning mr-1 mb-1" @onclick="CaptureScreen">Download As Image</button>
+            <button class="btn btn-info mr-1 mb-1" @onclick="LoadState">Load State</button>
+            <button class="btn btn-info mr-1 mb-1" @onclick="SaveState">Save State</button>
+            <button class="btn btn-primary mr-1 mb-1" @onclick="CetakReport">Download Report</button>
+        </div>
+     
+    </div>
+    <div class="row">
+        <div class="col col-12 alert alert-info mt-2">
+            @if (Progress > 0)
+            {
+                <div class="progress">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="@Progress" aria-valuemin="0" aria-valuemax="100" style="width: @Progress%"></div>
+                </div>
+            }
+            @PesanStatus
+        </div>
+    </div>
+    <hr />
+
+    @if (DataList?.Info?.PanitiaUrl != null)
+    {
+
+        <h3>Panitia dan Tugas</h3>
+
+        <div class="row">
+
+            <img src='@(MoslemToolkit.Helpers.ImageHelper.GetImageAsBase64Url(DataList?.Info.PanitiaUrl))' alt="panitia" />
+        </div>
+        <hr />
+    }
+    @if (DataList?.Info?.InfoLainUrl != null)
+    {
+
+        <h3>Info Lainnya</h3>
+
+        <div class="row">
+
+            <img src='@(MoslemToolkit.Helpers.ImageHelper.GetImageAsBase64Url(DataList?.Info?.InfoLainUrl))' alt="info-lain" />
+        </div>
+        <hr />
+    }
+    <h3>Data Hewan Qurban</h3>
+
+    <div class="row">
+        <div class="table-responsive">
+            <table class="table">
+                <tr>
+                    <td>No</td>
+                    <td>Pemilik</td>
+                    <td>Bruto (kg)</td>
+                    <td>Persen Nett</td>
+                    <td>Netto (kg)</td>
+                    <td>Kepala Sapi</td>
+                    <td>Jenis</td>
+                    <td>No Urut Potong</td>
+                    <td>Keterangan</td>
+                </tr>
+                @if (DataList?.DataHewanQurban != null)
+                {
+                    @foreach (var item in DataList?.DataHewanQurban)
+                    {
+
+                        <tr>
+                            <td>@item.No</td>
+                            <td>@item.Pemilik</td>
+                            <td>@item.Bruto.ToString("n2") kg</td>
+                            <td>@item.PersenNet.ToString("n2") %</td>
+                            <td>@item.Netto.ToString("n2") kg</td>
+                            <td>@item.KepalaSapi</td>
+                            <td>@item.Jenis.ToString()</td>
+                            <td><input type="number" @bind="@item.NoUrutPotong" /></td>
+                            <td>@item.Keterangan?.ToString()</td>
+                        </tr>
+                    }
+                    <tr>
+                        <td colspan="2">Total</td>
+                        <td><b>@DataList?.DataHewanQurban.Sum(x=>x.Bruto).ToString("n2") kg</b></td>
+                        <td></td>
+                        <td><b>@DataList?.DataHewanQurban.Sum(x=>x.Netto).ToString("n2") kg</b></td>
+                        <td colspan="4"></td>
+                    </tr>
+                }
+            </table>
+            <button @onclick="()=>UrutSapi(UrutanSapis.Acak)" class="btn btn-success">Acak No Urut</button>
+            <button @onclick="()=>UrutSapi(UrutanSapis.Reset)" class="btn btn-primary">Reset No Urut</button>
+            <button @onclick="()=>UrutSapi(UrutanSapis.Berat)" class="btn btn-info">Urut By Berat</button>
+        </div>
+    </div>
+    <hr />
+    <h3>Data Pembagian</h3>
+    <div class="form-group row">
+        <label for="nama" class="col-sm-2 col-form-label">Nama</label>
+        <div class="col-sm-11">
+            <input type="text" @bind="keyword" @bind:event="oninput" id="nama">
+        </div>
+    </div>
+    <div class="row">
+
+        <div class="table-responsive">
+
+            <table id="gridData" name="gridData" class="table table-striped w-auto">
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>Nama</th>
+                        <th>Sudah Siap</th>
+                        <th>Sudah Diterima</th>
+                        <th>KK</th>
+                        <th>Status</th>
+                        <th>Sapi</th>
+                        <th>Golongan</th>
+                        <th>KP</th>
+                        <th>Pembagian (kg)</th>
+                        <th>BL</th>
+                        <th>Kantong BL</th>
+
+                        <th>Kaki</th>
+                        <th>Kepala</th>
+                        <th>Tulang</th>
+                        <th>Jerohan</th>
+                        <th>Apresiasi (kg)</th>
+
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (DataList != null)
+                    {
+                        int counter = 1;
+                        var filtered = string.IsNullOrEmpty(keyword) ? DataList.Pembagian.OrderBy(x => x.Nama) :
+                        DataList.Pembagian.Where(x => x.Nama.ToLower().Contains(keyword.ToLower())).OrderBy(x => x.Nama);
+                        var attr = new Dictionary<string, object>();
+                        var attr2 = new Dictionary<string, object>();
+                        foreach (var item in filtered)
+                        {
+                            attr = item.SudahSiap ? new Dictionary<string, object>()
+                            {
+                            { "checked", "" }
+                            } : new Dictionary<string, object>();
+                            attr2 = item.SudahDiterima ? new Dictionary<string, object>()
+                            {
+                            { "checked", "" }
+                            } : new Dictionary<string, object>();
+                            <tr>
+                                <td>@(counter++)</td>
+                                <td>@item.Nama</td>
+                                <td><input type="checkbox" @attributes="attr" @onchange="(eventArgs) => { ChangeDataPembagian(TipeCheck.Siap, item, eventArgs.Value); }" /></td>
+                                <td><input type="checkbox" @attributes="attr2" @onchange="(eventArgs) => { ChangeDataPembagian(TipeCheck.Diterima, item, eventArgs.Value); }" /></td>
+                                <td>@item.KK</td>
+                                <td>@item.Status</td>
+                                <td>@item.Sapi</td>
+
+                                <td>@item.Golongan</td>
+                                <td>@item.KP</td>
+                                <td>@item.Pembagian</td>
+                                <td>@item.BL</td>
+                                <td>@item.Kantong</td>
+                                <td>@item.KAKI</td>
+                                <td>@item.KEPALA</td>
+                                <td>@item.TULANG</td>
+                                <td>@item.JEROHAN</td>
+                                <td>@item.APRESIASI</td>
+
+                            </tr>
+                        }
+                        <tr>
+                            <td colspan="9">Total</td>
+                            <td><b>@filtered?.Sum(x=>x.Pembagian).ToString("n2") kg</b></td>
+                            <td><b>@filtered?.Sum(x=>x.BL).ToString("n2") kg</b></td>
+                            <td></td>
+                            <td><b>@filtered?.Sum(x=>x.KAKI).ToString("n2")</b></td>
+                            <td><b>@filtered?.Sum(x=>x.KEPALA).ToString("n2")</b></td>
+                            <td><b>@filtered?.Sum(x=>x.TULANG).ToString("n2")</b></td>
+                            <td><b>@filtered?.Sum(x=>x.JEROHAN).ToString("n2")</b></td>
+                            <td><b>@filtered?.Sum(x=>x.APRESIASI).ToString("n2") kg</b></td>
+                        </tr>
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="14">
+                                Loading
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+        </div>
+
+    </div>
+    <h3>Data BL</h3>
+    <div class="row">
+
+        <div class="table-responsive">
+            <table class="table table-striped w-auto">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nama</th>
+                        <th>Sudah Siap</th>
+                        <th>Sudah Diterima</th>
+                        <th>Berat (kg)</th>
+                        <th>Bungkus (Pcs)</th>
+                        <th>KP</th>
+                        <th>Keterangan</th>
+                        <th>Jenis</th>
+                        <th>Total Kg (Berat x Bungkus)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (DataList != null)
+                    {
+                        int counter = 1;
+                        var attr = new Dictionary<string, object>();
+                        var attr2 = new Dictionary<string, object>();
+
+                        foreach (var item in DataList.BL.OrderBy(x => x.Nama))
+                        {
+                            attr = item.SudahSiap ? new Dictionary<string, object>()
+                            {
+                            { "checked", "" }
+                            } : new Dictionary<string, object>();
+                            attr2 = item.SudahDiterima ? new Dictionary<string, object>()
+                            {
+                            { "checked", "" }
+                            } : new Dictionary<string, object>();
+                            <tr>
+                                <td>@(counter++)</td>
+                                <td>@item.Nama</td>
+                                <td><input type="checkbox" @attributes="attr" @onchange="(eventArgs) => { ChangeDataBL(TipeCheck.Siap, item, eventArgs.Value); }" /></td>
+                                <td><input type="checkbox" @attributes="attr2" @onchange="(eventArgs) => { ChangeDataBL(TipeCheck.Diterima, item, eventArgs.Value); }" /></td>
+                                <td>@item.BERAT</td>
+                                <td>@item.BUNGKUS</td>
+                                <td>@item.KP</td>
+                                <td>@item.KETERANGAN</td>
+                                <td>@item.Jenis.ToString()</td>
+                                <td>@((item.BERAT * item.BUNGKUS).ToString("n2"))</td>
+
+
+                            </tr>
+                        }
+                        <tr>
+                            <td colspan="4">Total</td>
+                            <td><b>@DataList?.BL.Sum(x=>x.BERAT).ToString("n2") kg</b></td>
+                            <td><b>@DataList?.BL.Sum(x=>x.BUNGKUS).ToString("n2") pcs</b></td>
+                            <td colspan="3"></td>
+                            <td><b>@DataList?.BL.Sum(x=>x.BUNGKUS * x.BERAT).ToString("n2") kg</b></td>
+                            
+                        </tr>
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="9">
+                                Loading
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <hr />
+
+    <h3>Alokasi Sampil Jamaah</h3>
+    <div class="row">
+        <table class="table">
+            <tr>
+                <td>Keterangan</td>
+                <td>Nilai</td>
+            </tr>
+            <tr>
+                <td>Jumlah Sampil (pcs)</td>
+                <td><input type="text" @bind="DataList.QtySampil"></td>
+            </tr>
+            <tr>
+                <td>Berat Sampil (kg)</td>
+                <td><input type="text" @bind="DataList.BeratSampil"></td>
+
+            </tr>
+            <tr>
+                <td>Total Berat Sampil</td>
+                <td>@((DataList.BeratSampil * DataList.QtySampil)?.ToString("n0")) kg</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td><button class="btn btn-success" @onclick="GenerateReport">Refresh</button></td>
+            </tr>
+        </table>
+    </div>
+    <hr />
+    <h3>Laporan Qurban @Tahun</h3>
+
+    <div class="row">
+        <div class="table-responsive">
+            @if (DataList?.Report != null)
+            {
+                <table class="table">
+                    <tr>
+                        @foreach (System.Data.DataColumn dc in DataList?.Report.Columns)
+                        {
+                            <td>@dc.ColumnName</td>
+                        }
+
+                    </tr>
+
+                    @foreach (System.Data.DataRow item in DataList?.Report.Rows)
+                    {
+
+                        <tr>
+                            <td>@item[0]</td>
+                            <td>@item[1]</td>
+                            <td>@item[2]</td>
+                            <td>@item[3]</td>
+                        </tr>
+                    }
+                    <tr>
+                        <td colspan="2">Total</td>
+
+                        <td><b>@DataList?.TotalBerat.ToString("n2") kg</b></td>
+                        <td></td>
+                    </tr>
+
+                </table>
+            }
+        </div>
+        <table class="table">
+            <tr>
+                <td>Total Berat Pembagian</td>
+                <td>@DataList?.TotalBerat.ToString("n2") kg</td>
+            </tr>
+            <tr>
+                <td>Total Berat Pembagian Tanpa Porsi Sampil</td>
+                <td>@DataList?.BeratTanpaSampil.ToString("n2") kg</td>
+            </tr>
+            <tr>
+                <td>Total Berat Bersih Sapi</td>
+                <td>@DataList?.TotalBeratBersih?.ToString("n2") kg</td>
+            </tr>
+            <tr>
+                <td>Selisih (Total Berat Bersih Sapi - Total Berat Pembagian)</td>
+                <td>@((DataList?.TotalBeratBersih-DataList?.TotalBerat)?.ToString("n2")) kg</td>
+
+            </tr>
+
+        </table>
+    </div>
+</div>

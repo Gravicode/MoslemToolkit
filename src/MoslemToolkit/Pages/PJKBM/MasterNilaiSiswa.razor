@@ -1,0 +1,258 @@
+﻿@page "/master/NilaiSiswa"
+@layout MainLayoutPJKBM
+@inject IJSRuntime jsRuntime
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject NavigationManager NavMgr
+@*@namespace MoslemToolkit.Pages.Master*@
+@inject IToastService toastService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@using System.IO
+
+<h1>Form Penilaian Siswa</h1>
+
+<p>Gunakan halaman ini untuk absensi dan penilaian siswa</p>
+<div class="card-body">
+    <div>
+        <div class="form-group">
+            <label for="tanggal">Tanggal</label>
+            <input id="tanggal" type="date" class="form-control" @bind="@tanggal" />
+        </div>
+        <div class="form-group">
+            <label for="kelas">Kelas</label>
+            @if (DaftarKelas != null)
+            {
+                <select id="kelas" class="form-control"
+                        value="kelasId" @onchange="SelectKelas">
+                    <option value="-1">Pilih</option>
+                    @for (int i = 0; i < DaftarKelas.Count; i++)
+                    {
+                        <option value="@DaftarKelas[i].Id">
+                            @DaftarKelas[i].Nama
+                        </option>
+                    }
+                </select>
+            }
+        </div>
+        <div class="form-group">
+            <label for="materi">Materi</label>
+            @if (DaftarMateri != null)
+            {
+                <select id="materi" class="form-control"
+                        value="@materiKelasId" @onchange="SelectMateri">
+                    <option value="-1">Pilih</option>
+                    @for (int i = 0; i < DaftarMateri.Count; i++)
+                    {
+                <option value="@DaftarMateri[i].Id">
+                    @DaftarMateri[i].Materi?.Bab?.Nama - @DaftarMateri[i].Materi?.Nama
+                </option>
+                    }
+                </select>
+            }
+        </div>
+        <button class="btn btn-primary" @onclick="RefreshData">Refresh</button>
+    </div>
+
+</div>
+@if (DataNilaiSiswa == null)
+{
+    <p><em>No Data</em></p>
+}
+else
+{
+
+    <body onbeforeunload="TestDataTablesRemove('#gridData')">
+        <div class="table-responsive">
+            <table id="gridData" name="gridData" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Bab</th>
+                        <th>Materi</th>
+
+                        <th>Nama Siswa</th>
+                        <th>Kehadiran</th>
+
+                        <th>Nilai</th>
+                        <th>Action</th>
+                    </tr>
+
+                </thead>
+                <tbody>
+                    @foreach (var item in DataNilaiSiswa)
+                    {
+                        <tr>
+                            <td>@item.MateriPerKelas?.Materi?.Bab?.Nama</td>
+                            <td>@item.MateriPerKelas?.Materi?.Nama</td>
+                            <td>@item.Jamaah?.Nama</td>
+                            <td>@(item.Hadir?"Ya":"Tidak")</td>
+                            <td>@item.Nilai</td>
+
+                            <td>
+                                @if (HasLogin)
+                                {
+                                    <input type="button" class="btn btn-danger" @onclick="(() => PrepareForDelete(item))" data-toggle="modal" data-target="#confirmDeleteModal" value="Hapus" />
+                                }
+                                else
+                                {
+                                    <p>-</p>
+                                }
+                            </td>
+
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </body>
+}
+@if (HasLogin)
+{
+    <div>
+        <input type="button" data-toggle="modal" data-target="#taskModal" class="btn btn-primary" value="Beri Nilai Siswa" @onclick="(() => InitializeitemObject())" />
+    </div>
+}
+<ConfirmDialog OnClick="@Delete" />
+<NilaiSiswaDetail @ref="detail" Tanggal="@tanggal" service="@service" selectedSiswa="@DataNilaiSiswa" selKelas="@selKelas" TaskObject=@selMateri DataChanged="@DataChanged">
+    <CustomHeader>@customHeader</CustomHeader>
+</NilaiSiswaDetail>
+
+@code {
+    bool HasLogin;
+    NilaiSiswaDetail detail;
+    MoslemToolkit.Data.NilaiSiswaService service;
+    MoslemToolkit.Data.KelasService kelasservice;
+    MoslemToolkit.Data.MateriPerKelasService materiKelasservice;
+    string customHeader = string.Empty;
+    List<NilaiSiswa> DataNilaiSiswa;
+    List<Kelas> DaftarKelas;
+    List<MateriPerKelas> DaftarMateri;
+    long kelasId = -1;
+    Kelas selKelas;
+    long materiKelasId = -1;
+    MateriPerKelas selMateri;
+    DateTime tanggal;
+    NilaiSiswa itemObject = new NilaiSiswa();
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    string UserName;
+
+    void SelectKelas(ChangeEventArgs e)
+    {
+        kelasId = long.Parse(e.Value.ToString());
+        selKelas = kelasservice.GetDataById(kelasId);
+        materiKelasId = -1;
+        GetMateriData();
+        RefreshData();
+    }
+
+    void SelectMateri(ChangeEventArgs e)
+    {
+        materiKelasId = long.Parse(e.Value.ToString());
+        selMateri = materiKelasservice.GetDataById(materiKelasId);
+        RefreshData();
+    }
+
+    void GetMateriData()
+    {
+        if (kelasId > 0)
+            DaftarMateri = materiKelasservice.GetDataByKelasId(kelasId);
+        else
+            DaftarMateri = null;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new NilaiSiswaService();
+        if (kelasservice == null) kelasservice = new KelasService();
+        if (materiKelasservice == null) materiKelasservice = new MateriPerKelasService();
+        tanggal = DateHelper.GetLocalTimeNow();
+
+        DaftarKelas = kelasservice.GetAllData();
+        GetMateriData();
+
+        RefreshData();
+    }
+
+    void RefreshData()
+    {
+        if (kelasId < 0 || materiKelasId<0)
+            DataNilaiSiswa = null;
+        else
+            DataNilaiSiswa = service.GetDataByKelasMateri(tanggal,materiKelasId);
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (DataNilaiSiswa != null && DataNilaiSiswa.Count > 0)
+        {
+
+            await jsRuntime.InvokeAsync<object>("TestDataTablesAdd", "#gridData");
+        }
+        if (firstRender)
+        {
+            if (string.IsNullOrEmpty(UserName))
+            {
+                try
+                {
+                    UserName = await localStorage.GetItemAsync<string>(AppConstants.NameKey);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+                if (string.IsNullOrEmpty(UserName))
+                {
+                    NavMgr.NavigateTo($"/login");
+                }
+                else
+                {
+
+                }
+            }
+
+           {
+                        HasLogin = RoleInfo.HasRole(UserName, Roles.Pengurus) || RoleInfo.HasRole(UserName, Roles.PJKBM);
+                        if (HasLogin)
+                StateHasChanged();
+            }
+        }
+    }
+
+    private void InitializeitemObject()
+    {
+
+        //itemObject = new NilaiSiswa();
+
+        detail.Refresh();
+
+
+
+        //itemObject.Id = -1;
+
+        customHeader = "Masukan Absensi dan Nilai Siswa";
+    }
+    private async void DataChanged()
+    {
+        RefreshData();
+        StateHasChanged();
+    }
+
+
+    private void PrepareForDelete(NilaiSiswa item)
+    {
+        itemObject = item;
+    }
+
+    private async Task Delete()
+    {
+        var task = service.DeleteData(itemObject.Id);
+        await jsRuntime.InvokeAsync<object>("CloseModal", "confirmDeleteModal");
+        RefreshData();
+    }
+
+    private async System.Threading.Tasks.Task applyPager(string TableName)
+    {
+        await jsRuntime.InvokeAsync<object>("applyPager", TableName);
+    }
+
+}

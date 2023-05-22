@@ -1,0 +1,34 @@
+﻿<h4>Kalkulator Nilai</h4>
+<div>
+  <div class="form-group">
+    <label for="txtTotal">Total Soal</label>
+    <input type="number" @bind="Total" class="form-control" id="txtTotal" aria-describedby="help1" placeholder="Masukan jumlah soal">
+    <small id="help1" class="form-text text-muted">Isi dengan jumlah uraian/soal.</small>
+  </div>
+  <div class="form-group">
+    <label for="txtBenar">Total Jawaban Benar</label>
+    <input type="number" @bind="Benar" class="form-control" id="txtBenar" placeholder="Jumlah jawaban benar">
+  </div>
+  <div class="form-group">
+    <label for="txtNilai">Nilai</label>
+    <input type="text" @bind="Hasil" class="form-control" id="txtNilai" readonly placeholder="Perhitungan Nilai">
+  </div>
+  <button type="button" @onclick="Hitung" class="btn btn-primary">Hitung Nilai</button>
+</div>
+
+@code {
+    int Total=0;
+    int Benar=0;
+    string Hasil;
+     protected override void OnInitialized()
+    {
+    }
+    void Hitung()
+    {
+        if (Total > 0)
+        {
+            
+            Hasil = (((double)Benar/Total)*100).ToString("n2");
+        }
+    }
+}

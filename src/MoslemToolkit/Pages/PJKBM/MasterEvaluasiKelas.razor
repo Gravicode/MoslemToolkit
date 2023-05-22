@@ -1,0 +1,225 @@
+﻿@page "/master/EvaluasiKelas"
+@layout MainLayoutPJKBM
+
+@inject IJSRuntime jsRuntime
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject NavigationManager NavMgr
+@inject IToastService toastService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@using System.Globalization
+<h1>Evaluasi Kelas</h1>
+
+<p>Gunakan halaman ini untuk memberi nilai ujian akhir</p>
+
+<div class="row">
+    <div class="col col-12">
+        <div class="form-group">
+            <label for="Kelas" class="col-sm-2 col-form-label">Kelas</label>
+            <div class="col-sm-11">
+                <select  @onchange="PilihKelas">
+                    <option selected value="-1">Pilih</option>
+                    @foreach (var template in DataKelas)
+                    {
+                        <option value=@template.Id>@template.Nama</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="Tahun" class="col-sm-2 col-form-label">Tahun</label>
+            <div class="col-sm-11">
+                <select @bind="Tahun">
+                    <option value="-1">Pilih</option>
+                    @foreach (var tahun in ListTahun)
+                    {
+                        <option value=@tahun>@tahun</option>
+                    }
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="Semester" class="col-sm-2 col-form-label">Semester</label>
+            <div class="col-sm-11">
+                <select @bind="Semester">
+                    <option value="1">Semester Ganjil</option>
+                    <option value="2">Semester Genap</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="siswa" class="col-sm-2 col-form-label">Siswa</label>
+            <div class="col-sm-11">
+                <select  @bind="JamaahId">
+                    <option selected value="-1">Pilih</option>
+                    @if (DataSiswa != null)
+                    {
+                        @foreach (var template in DataSiswa)
+                        {
+                            <option value=@template.Id>@template.Nama</option>
+                        }
+
+                    }
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <button @onclick="Lihat" class="btn btn-success mb-2">Lihat</button>
+        </div>
+    </div>
+
+</div>
+
+@if (DataEvaluasiKelasItems == null)
+{
+    <p><em>Pilih Filter lalu klik Lihat...</em></p>
+}
+else
+{
+        <div class="table_container">
+            <table id="gridData" name="gridData" class="table_freeze table table-bordered table-hover table-striped">
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>Materi</th>
+                        <th>Penjabaran Materi</th>
+                        <th>Nilai</th>
+                        <th>Nilai Mutu</th>                       
+                        <th >Keterangan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        var counter = 0;
+                    }
+                    @foreach (var dataitem in DataEvaluasiKelasItems)
+                    {
+                        counter++;
+                        <tr>
+                            <td>@counter</td>
+                            <td>@dataitem.Data.MateriPerKelas.Materi.Bab.Nama</td>
+                            <td>@dataitem.Data.MateriPerKelas.Materi.Nama</td>
+                        <td>
+                            <input type="number" @bind="@dataitem.Data.Nilai" />
+                        </td>
+                        <td>
+                            <input type="text" @bind="@dataitem.Data.NilaiMutu" />
+                        </td>
+                            <td>
+                                <textarea @bind="dataitem.Data.Keterangan"></textarea>
+                            </td>
+                        </tr>
+                    }
+
+                </tbody>
+            </table>
+        </div>
+       
+        <hr/>
+    @if (SelLaporanHasilBelajarItem != null && SelLaporanHasilBelajarItem.Data!=null)
+    {
+        <table class="table table-bordered table-stripped">
+            <thead>
+                <tr>
+                    <th>Ketidakhadiran</th>
+                    <th>Hari</th>
+                    <th>Kepribadian</th>
+                    <th>Keterangan</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        Sakit
+                    </td>
+                    <td>  
+                        <input type="number" @bind="SelLaporanHasilBelajarItem.Data.Sakit" />
+                    </td>
+                    <td>
+                        Sikap dan Akhlak
+                    </td>
+                    <td>  
+                        <input type="text" @bind="SelLaporanHasilBelajarItem.Data.SikapAkhlak" />
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        Ijin
+                    </td>
+                    <td>  
+                        <input type="number" @bind="SelLaporanHasilBelajarItem.Data.Ijin" />
+                    </td>
+                    <td>
+                        Kerajinan
+                    </td>
+                    <td>  
+                        <input type="text" @bind="SelLaporanHasilBelajarItem.Data.Kerajinan" />
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        Alpha
+                    </td>
+                    <td>  
+                        <input type="number" @bind="SelLaporanHasilBelajarItem.Data.Alpha" />
+                    </td>
+                    <td>
+                        Kebersihan dan Kerapihan
+                    </td>
+                    <td>  
+                        <input type="text" @bind="SelLaporanHasilBelajarItem.Data.KebersihanKerapihan" />
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <input type="button" class="btn btn-info mt-2" value="Update Stat" @onclick="(() => UpdateStat())" />
+        <hr/>
+    }
+}
+
+@if (DataEvaluasiKelasItems != null && DataEvaluasiKelasItems.Count > 0)
+{
+    <div>
+        @if (HasLogin)
+        {
+            <input type="button" class="btn btn-primary mt-2" value="Simpan" @onclick="(() => Simpan())" />        
+            <input type="button" class="btn btn-success mt-2" value="Hitung Mutu" @onclick="(() => HitungMutu())" />
+        }
+    </div>
+    <hr>
+    
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Mutu</th>
+            <th>Range</th>
+            <th>Keterangan</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>A</td>
+            <td>86 - 100</td>
+            <td>ragu 1-2 kali (memperbaiki sendiri)</td>
+        </tr>
+        <tr>
+            <td>B</td>
+            <td>71 - 85 </td>
+            <td>ragu 3-4 kali (memperbaiki sendiri)</td>
+        </tr>
+        <tr>
+            <td>C</td>
+            <td>56 - 70 </td>
+            <td>ragu > kali (dibimbing)</td>
+        </tr>
+        <tr>
+            <td>D</td>
+            <td>lebih kecil dari 56</td>
+            <td>tidak bisa sama sekali</td>
+        </tr>
+    </tbody>
+</table>
+}
+ <hr/>
+<KalkulatorNilai></KalkulatorNilai>

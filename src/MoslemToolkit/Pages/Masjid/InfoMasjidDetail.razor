@@ -1,0 +1,203 @@
+@using Newtonsoft.Json
+@using MoslemToolkit.Helpers
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject IJSRuntime jsRuntime
+@*@namespace MoslemToolkit.Pages.Master*@
+@using System.IO
+@inject IToastService toastService
+@inject AzureBlobHelper blob
+<div class="modal" tabindex="-1" role="dialog" id="taskModal">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@CustomHeader</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div>
+                   
+
+                    <div class="form-group">
+                        <label for="nama">Kode Masjid</label>
+                        <input type="hidden" @bind="@TaskObject.Id" />
+                        <input id="Nama" type="text" class="form-control" @bind="@TaskObject.KodeMasjid" />
+                    </div>
+
+                    @if (detail != null)
+                    {
+                        <div class="form-group">
+                            <label for="nama">Nama Masjid</label>
+                            <input id="nama" type="text" class="form-control" @bind="@detail.NamaMasjid" />
+
+                        </div>
+                        <div class="form-group">
+                            <label for="lokasi">Lokasi Masjid</label>
+                            <input id="lokasi" type="text" class="form-control" @bind="@detail.Lokasi" />
+
+                        </div>
+                        <div class="form-group">
+                            <label for="imam">Imam Masjid</label>
+                            <input id="imam" type="text" class="form-control" @bind="@detail.Imam" />
+
+                        </div>
+                        <div class="form-group">
+                            <label for="khatib">Khatib</label>
+                             <input id="khatib" @bind="detail.Khotib" type="text" placeholder="nama khotib" />
+                                   
+                        </div>
+                        <div class="form-group">
+                            <label for="muazin">Muazin</label>
+                            <input id="muazin" @bind="detail.Muazin" type="text" placeholder="nama muadzin" />
+                                   
+                        </div>
+                        <div class="form-group">
+                            <label for="pengumuman">Pengumuman</label>
+                            <ul id="pengumuman">
+                                @if (detail.Pengumuman != null)
+                                {
+                                    @foreach (var item in detail.Pengumuman)
+                                    {
+                                        <li>                            
+                                            <input type="text" class="form-control" @bind="@item.Keterangan" />
+                                            <button type="button" class="btn btn-alert" @onclick="()=>HapusPengumuman(item)">Hapus</button>
+                                        </li>
+                                    }
+                                }
+
+                            </ul>
+
+                            <button class="btn btn-info" @onclick="TambahPengumuman">Tambah</button>
+                        </div>
+                        <div class="form-group">
+                            <label for="gambar">Gambar Latar</label>
+                             @if (detail.ImageUrl != null && detail.ImageUrl.Count > 0)
+                                    {
+                                        <ul id="gambar">
+                                            @foreach (var item in detail.ImageUrl)
+                                            {
+                                                <li><img width="40" src="@item.Url" alt="img" /><br />
+                                                    <button type="btn btn-alert btn-sm" class="btn btn-alert" @onclick="()=>RemoveImage(item)">Hapus</button></li>
+                                            }
+                                        </ul>
+                                    }
+                                    else
+                                    {
+                                        <div class="alert alert-warning"> pilih foto Anda lalu tunggu sampai file selesai di upload.</div>
+                                    }
+                                    <BlazorInputFile.InputFile OnChange="HandleFileSelected" />
+                        </div>
+                        <div class="form-group">
+                            <label for="video">Video Latar</label>
+                             <input id="video" @bind="detail.VideoUrl" type="text" placeholder="video url" />
+                                   
+                        </div>
+                    }
+
+
+                    <button type="submit" class="btn btn-primary" @onclick="HandleValidSubmit">Simpan</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public InfoDetailMasjid detail{ set; get; }
+    string PicUrl,VideoUrl;
+    public string FileUrl { get; set; }
+    [Parameter]
+    public RenderFragment CustomHeader { get; set; }
+    [Parameter]
+    public InfoMasjid TaskObject { get; set; }
+    [Parameter]
+    public Action DataChanged { get; set; }
+    MoslemToolkit.Data.InfoMasjidService service;
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new InfoMasjidService();
+        //if (detail == null) detail = new InfoDetailMasjid();
+
+    }
+    void TambahPengumuman(){
+        detail?.Pengumuman.Add(new PengumumanItem() { Keterangan = $"pengumuman - {detail.Pengumuman.Count + 1}" });
+    }
+
+    async Task HapusPengumuman(PengumumanItem data)
+    {
+        detail?.Pengumuman?.Remove(data);
+    }
+    async Task HandleFileSelected(IFileListEntry[] files)
+    {
+        foreach (var file in files)
+        {
+            if (file != null)
+            {
+                // Just load into .NET memory to show it can be done
+                // Alternatively it could be saved to disk, or parsed in memory, or similar
+
+                var ms = new MemoryStream();
+                await file.Data.CopyToAsync(ms);
+                var bytes = ImageHelper.FixedSize(ms, 1920, 1080, false);
+                string newName = $"BG_{DateTime.Now.ToString("dd_MM_yyyy")}_{Path.GetFileNameWithoutExtension(file.Name)}{Path.GetExtension(file.Name)}";
+                //var bytes = ms.ToArray();
+                ms.Dispose();
+                await blob.UploadFile(newName, bytes);
+                FileUrl = $"{AppConstants.UploadUrlPrefix}/{newName}";
+                detail?.ImageUrl?.Add(new ImageItem() { Url = FileUrl, Name = newName});
+            }
+        }
+    }
+    public void Refresh()
+    {
+        /*
+        if (!string.IsNullOrEmpty(TaskObject?.DataMasjid))
+        {
+            detail = JsonConvert.DeserializeObject<InfoDetailMasjid>(TaskObject.DataMasjid);
+        }
+        else
+        {
+            detail = new InfoDetailMasjid();
+        }*/
+    }
+    async Task RemoveImage(ImageItem idx)
+    {
+     
+            detail?.ImageUrl?.Remove(idx);
+    }
+    private async void HandleValidSubmit()
+    {
+        if(detail == null){
+            toastService.ShowError("lengkapi data terlebih dahulu.");
+            return;
+        }else
+        TaskObject.DataMasjid = JsonConvert.SerializeObject(detail);
+        if (TaskObject.Id == 0)
+        {
+
+            service.InsertData(TaskObject);
+
+        }
+        else
+        {
+            service.UpdateData(TaskObject);
+        }
+
+        await CloseTaskModal();
+        DataChanged?.Invoke();
+    }
+
+
+
+    private async Task CloseTaskModal()
+    {
+        await jsRuntime.InvokeAsync<object>("CloseModal", "taskModal");
+    }
+
+
+}

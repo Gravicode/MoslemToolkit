@@ -1,0 +1,53 @@
+﻿@inject NavigationManager NavMgr
+<div class="row">
+    <div class="col-12">
+        <div class="card mb-2">
+            <div class="card-header">
+                Informasi Qurban
+            </div>
+            <div class="card-body">
+
+                <p class="card-text">
+                    <button @onclick="Buka" class="btn btn-success">INFO QURBAN</button>
+                </p>
+
+            </div>
+
+        </div>
+        @if (laporanQurban != null)
+        {
+            <div class="card mb-2">
+                <div class="card-header">
+                    Laporan Qurban 2020
+                </div>
+
+                <div class="card-body">
+
+                    <p class="card-text">
+                        <button @onclick="() => NavMgr.NavigateTo(laporanQurban.FileUrl)" class="btn btn-info">DOWNLOAD</button>
+                    </p>
+
+                </div>
+
+            </div>
+
+        }
+    </div>
+</div>
+@code {
+    MoslemToolkit.Data.DokumenService service;
+    Models.Dokumen laporanQurban;
+    void Buka()
+    {
+        NavMgr.NavigateTo("/info-qurban");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new DokumenService();
+
+        laporanQurban = service.GetAllData().Where(x => x.Nama.ToLower().Contains("qurban")).FirstOrDefault();
+
+
+    }
+}

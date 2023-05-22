@@ -1,0 +1,228 @@
+﻿@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@using System.Linq 
+@inject IJSRuntime jsRuntime
+@*@namespace MoslemToolkit.Pages.Master*@
+@using System.IO
+@inject IToastService toastService
+
+<div class="modal" tabindex="-1" role="dialog" id="taskModal">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@CustomHeader</h5>
+
+
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@TaskObject" OnValidSubmit="@HandleValidSubmit">
+                    <DataAnnotationsValidator />
+
+                    <div class="form-group">
+                        <label for="Judul">Judul</label>
+                        <input type="hidden" @bind-value="@TaskObject.Id" />
+                        <InputText id="Judul" class="form-control" @bind-Value="@TaskObject.Judul" />
+                        <ValidationMessage For="@(() => TaskObject.Judul)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="Pesan">Pesan</label>
+                        <InputTextArea id="Pesan" class="form-control" @bind-Value="@TaskObject.Pesan" />
+                        <ValidationMessage For="@(() => TaskObject.Pesan)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="WaktuKirim">Waktu Kirim</label>
+                        <input type="text" id="WaktuKirim" class="form-control" @bind="@TaskObject.WaktuKirim" />
+                        <ValidationMessage For="@(() => TaskObject.WaktuKirim)" />
+                    </div>
+                    <div class="form-columns">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>Aktif Dari</label>
+                                <input type="datetime" id="AktifDari" class="form-control" @bind="@TaskObject.AktifDari" />
+                                <ValidationMessage For="@(() => TaskObject.AktifDari)" />
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>Aktif Sampai</label>
+                                <input type="datetime" id="AktifSampai" class="form-control" @bind="@TaskObject.AktifSampai" />
+                                <ValidationMessage For="@(() => TaskObject.AktifSampai)" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Kirim Berulang</label>
+                        <input type="checkbox"  id="Berulang" class="form-control" @bind="@TaskObject.Berulang" />
+                        <ValidationMessage For="@(() => TaskObject.Berulang)" />
+                    </div>
+                    <div class="form-group">
+                      
+                            @if (hariselect != null)
+                            {
+                        <table id="gridData" name="gridData" class="table table-striped">
+                            
+                      
+                                    @foreach (var item in hariselect)
+                                    {
+                                        <tr>
+                                            <td>@item.Name</td>
+                                            
+                                            <td> <input type="checkbox" class="form-control" @bind="@item.Pilih" /></td>
+
+                                        </tr>
+                                    }
+                           
+                        </table>
+                             
+                                
+                            }
+                        
+                    </div>
+                    <div class="form-group">
+                        <label for="dikirimke">Dikirim Ke</label>
+                        <div class="table-responsive">
+                            <table id="gridData" name="gridData" class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Nama</th>
+                                        <th>Telepon</th>
+                                        <th>Pilih</th>
+                                       
+                                    </tr>
+
+                                </thead>
+                                <tbody>
+                                    @if (recipients != null)
+                                    {
+                                    @foreach (var item in recipients)
+                                    {
+                                        <tr>
+                                            <td>@item.Nama</td>
+                                            <td>@item.Phone</td>
+                                            <td> <input type="checkbox" class="form-control" @bind="@item.Pilih" /></td>
+                                           
+                                        </tr>
+                                    }}
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+                    
+
+
+
+
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    List<SmsRecipient> recipients;
+    List<DaySelect> hariselect;
+    [Parameter]
+    public RenderFragment CustomHeader { get; set; }
+
+    SmsBroadcastData _TaskObject;
+    [Parameter]
+    public SmsBroadcastData TaskObject { get { return _TaskObject; }
+        set {
+            _TaskObject = value;
+            if (_TaskObject.Hari != null)
+            {
+                foreach (var item in _TaskObject.Hari)
+                {
+                    hariselect[(int)item].Pilih = true;
+                }
+            }
+            if (_TaskObject.DikirimKe != null) {
+                var phones = new HashSet<string>();
+                _TaskObject.DikirimKe.ForEach(x => { phones.Add(x); });
+                for(int i = 0; i < recipients.Count; i++)
+                {
+                    recipients[i].Pilih = phones.Contains(recipients[i].Phone) ? true : false;
+                }
+            }
+        }
+    }
+    [Parameter]
+    public Action DataChanged { get; set; }
+    MoslemToolkit.Data.SmsBroadcastService service;
+    JamaahService jamaahSvc;
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new SmsBroadcastService();
+        if (jamaahSvc == null) jamaahSvc = new JamaahService();
+
+        hariselect = new List<DaySelect>();
+        for (int i = 0; i < 7; i++)
+        {
+            hariselect.Add(new DaySelect() { Day = (DayOfWeek)i, Name= GetDayName((DayOfWeek)i), Pilih=false });
+        }
+        if (recipients == null)
+        {
+            var data = jamaahSvc.GetAllData();
+            recipients = (from x in data
+                          where x.Posisi !=  PosisiKeluarga.SIMPATISAN && !string.IsNullOrEmpty(x.Telepon)
+                          select new SmsRecipient() { Nama = x.Nama, Phone=x.Telepon, Pilih =false }).ToList();
+        }
+    }
+    string GetDayName(DayOfWeek day)
+    {
+        var culture = new System.Globalization.CultureInfo("id-ID");
+        var dayStr = culture.DateTimeFormat.GetDayName(day);
+        return dayStr;
+    }
+    private async void HandleValidSubmit()
+    {
+
+        List<DayOfWeek> haris = new List<DayOfWeek>();
+
+        for (int i = 0; i < hariselect.Count; i++)
+        {
+
+            if (hariselect[i].Pilih)
+            {
+                haris.Add(hariselect[i].Day);
+            }
+
+        }
+        TaskObject.Hari = haris;
+
+        var recs = from x in recipients
+                   where x.Pilih
+                   select x.Phone;
+        TaskObject.DikirimKe = recs.ToList();
+
+        if (TaskObject.Id == 0)
+        {
+
+            service.InsertData(SmsBroadcastData.From(TaskObject));
+
+        }
+        else
+        {
+            service.UpdateData(SmsBroadcastData.From(TaskObject));
+        }
+
+        await CloseTaskModal();
+        DataChanged?.Invoke();
+    }
+
+
+
+    private async Task CloseTaskModal()
+    {
+        await jsRuntime.InvokeAsync<object>("CloseModal", "taskModal");
+    }
+
+
+}

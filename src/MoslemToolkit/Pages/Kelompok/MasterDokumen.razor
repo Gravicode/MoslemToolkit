@@ -1,0 +1,240 @@
+﻿@page "/master/Dokumen"
+
+@inject IJSRuntime jsRuntime
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject NavigationManager NavMgr
+@*@namespace MoslemToolkit.Pages.Master*@
+@inject IToastService toastService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+
+@using System.IO
+<h1>Repositori Dokumen Kelompok</h1>
+
+<p>Gunakan halaman ini untuk menyimpan dokumen kelompok.</p>
+
+@if (DataDokumen == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+<body onbeforeunload="TestDataTablesRemove('#gridData')">
+    <div class="table-responsive">
+        <table id="gridData" name="gridData" class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Nama</th>
+                    <th>Tanggal</th>
+
+                    <th>Kategori</th>
+                    <th>Keterangan</th>
+                    <th>Jenis</th>
+                    <th>Di Upload Oleh</th>
+                    <th>Actions</th>
+                </tr>
+
+            </thead>
+            <tbody>
+                @foreach (var item in DataDokumen)
+                {
+                    <tr>
+                        <td>@item.Nama</td>
+                        <td>@item.Tanggal.ToString("dd/MMM/yyyy HH:mm")</td>
+                        <td>@item.Kategori</td>
+                        <td>@item.Keterangan</td>
+                        <td>@(GetTipeDokumen(item.FileUrl))</td>
+                        <td>@item.CreatedBy</td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(item.FileUrl))
+                            {
+                                <input type="button" class="btn btn-primary" @onclick="(() => DownloadFile(item.FileUrl))" value="Download" />
+                            }
+                            @if (HasLogin)
+                            {
+                            <input type="button" class="btn btn-primary" @onclick="(() => PrepareForEdit(item))" data-toggle="modal" data-target="#taskModal" value="Ubah" />
+                            <input type="button" class="btn btn-danger" @onclick="(() => PrepareForDelete(item))" data-toggle="modal" data-target="#confirmDeleteModal" value="Hapus" />
+                            }
+                        </td>
+
+                    </tr>
+                }
+            </tbody>
+        </table>
+        </div>
+</body>
+}
+@if (HasLogin)
+{
+<div>
+    <input type="button" data-toggle="modal" data-target="#taskModal" class="btn btn-primary" value="Tambah Dokumen" @onclick="(() => InitializeitemObject())" />
+</div>
+}
+<ConfirmDialog OnClick="@Delete" />
+<DokumenDetail @ref="detail" TaskObject=@itemObject DataChanged="@DataChanged">
+    <CustomHeader>@customHeader</CustomHeader>
+</DokumenDetail>
+
+@code {
+    bool HasLogin = false;
+    DokumenDetail detail;
+    MoslemToolkit.Data.DokumenService service;
+    string customHeader = string.Empty;
+    List<Dokumen> DataDokumen;
+    Dokumen itemObject = new Dokumen();
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    string UserName;
+    string GetTipeDokumen(string PathFile)
+    {
+        if (string.IsNullOrEmpty(PathFile)) return "tidak ada";
+        var ext = Path.GetExtension(PathFile);
+        switch (ext.ToLower())
+        {
+            case ".jpg":
+            case ".png":
+            case ".gif":
+            case ".bmp":
+                return "gambar";
+                break;
+            case ".xlsx":
+            case ".xls":
+            case ".doc":
+            case ".docx":
+            case ".ppt":
+            case ".pptx":
+                return "Dokumen office";
+                break;
+            case ".pdf":
+                return "Dokumen pdf";
+                break;
+            case ".avi":
+            case ".mp4":
+            case ".mov":
+            case ".mpeg":
+
+                return "video";
+                break;
+            case ".mp3":
+            case ".wav":
+            case ".mid":
+
+                return "audio";
+                break;
+            default:
+                return "lainnya";
+        }
+    }
+    async Task DownloadFile(string Url)
+    {
+        if (!string.IsNullOrEmpty(Url))
+        {
+            NavMgr.NavigateTo(Url, true);
+        }
+        else
+        {
+            toastService.ShowError("Url kosong atau tidak valid.");
+        }
+        /*
+        if (!string.IsNullOrEmpty(Url))
+        {
+            HttpClient client = new HttpClient();
+            var res = await client.GetAsync(Url);
+            var Fname = Path.GetFileName(Url);
+            if (res.IsSuccessStatusCode)
+            {
+                var bytes = await res.Content.ReadAsByteArrayAsync();
+                await FileUtil.SaveAs(jsRuntime, Fname, bytes);
+            }
+
+        }
+        else
+        {
+            toastService.ShowError("Gagal mendownload file, terjadi kesalahan.");
+        */
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new DokumenService();
+
+        DataDokumen = service.GetAllData();
+
+
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (DataDokumen != null && DataDokumen.Count > 0)
+        {
+
+            await jsRuntime.InvokeAsync<object>("TestDataTablesAdd", "#gridData");
+        }
+        if (firstRender)
+        {
+            if (string.IsNullOrEmpty(UserName))
+            {
+                try
+                {
+                    UserName = await localStorage.GetItemAsync<string>(AppConstants.NameKey);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+                if (string.IsNullOrEmpty(UserName))
+                {
+                    NavMgr.NavigateTo($"/login");
+                }
+                else if (!string.IsNullOrEmpty(UserName) && UserName == AppConstants.USER_ADMIN)
+                {
+                    HasLogin = true;
+                    StateHasChanged();
+                }
+            }
+        }
+    }
+
+    private void InitializeitemObject()
+    {
+
+        itemObject = new Dokumen();
+        itemObject.CreatedBy = UserName;
+        itemObject.Tanggal = DateHelper.GetLocalTimeNow();
+
+        detail.FileUrl = "";
+
+        //itemObject.Id = -1;
+
+        customHeader = "Tambah Dokumen";
+    }
+    private async void DataChanged()
+    {
+        DataDokumen = service.GetAllData();
+        StateHasChanged();
+    }
+
+    private void PrepareForEdit(Dokumen item)
+    {
+        customHeader = "Ubah Dokumen";
+        itemObject = item;
+        detail.FileUrl = item.FileUrl;
+    }
+    private void PrepareForDelete(Dokumen item)
+    {
+        itemObject = item;
+    }
+    private async Task Delete()
+    {
+        var task = service.DeleteData(itemObject.Id);
+        await jsRuntime.InvokeAsync<object>("CloseModal", "confirmDeleteModal");
+        DataDokumen = service.GetAllData();
+        itemObject = new Dokumen() { Id = -1 };
+    }
+
+    private async System.Threading.Tasks.Task applyPager(string TableName)
+    {
+        await jsRuntime.InvokeAsync<object>("applyPager", TableName);
+    }
+
+}

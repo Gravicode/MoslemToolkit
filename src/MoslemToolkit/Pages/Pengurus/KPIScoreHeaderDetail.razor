@@ -1,0 +1,266 @@
+﻿@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject IJSRuntime jsRuntime
+@*@namespace MoslemToolkit.Pages.Master*@
+@using System.IO
+@inject IToastService toastService
+
+<div class="modal" tabindex="-1" role="dialog" id="taskModal">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@CustomHeader</h5>
+
+
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@TaskObject" OnValidSubmit="@HandleValidSubmit">
+                    <DataAnnotationsValidator />
+                    <div class="form-group">
+                        <label for="batchno">Batch No</label>
+                        <select @bind="@TaskObject.BatchNo" id="batchno">
+                            <option value="-">Pilih</option>
+                            @if (DataBatch != null)
+                            {
+                                @foreach (var item in DataBatch)
+                                {
+                                    <option value="@item.BatchNo">@item.BatchNo - @item.Keterangan</option>
+
+                                }
+                            }
+                        </select>
+                        <ValidationMessage For="@(() => TaskObject.BatchNo)" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tgl">Tanggal</label>
+                        <InputDate id="tgl" class="form-control" @bind-Value="@TaskObject.TanggalPenilaian" />
+                        <ValidationMessage For="@(() => TaskObject.TanggalPenilaian)" />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tim">Nama - Dapukan</label>
+                        <select @onchange="TimSelect" id="tugas" disabled="@(TaskObject.Id!=0)">
+                            <option value="-">Pilih</option>
+                            @if (DataTim != null)
+                            {
+                                @foreach (var item in DataTim)
+                                {
+                                    @if (item.Nama == TaskObject?.Nama && item.Tugas == TaskObject?.Dapukan)
+                                    {
+                                        <option selected value="@item.Id">@item.Nama - @item.Tugas</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@item.Id">@item.Nama - @item.Tugas</option>
+                                    }
+
+                                }
+                            }
+                        </select>
+                    </div>
+
+                    @*<div class="form-group">
+                        <label for="tugas">Dapukan</label>
+                        <select @bind="@TaskObject.Dapukan" id="tugas">
+                        <option value="-">Pilih</option>
+                        @if (DataDapukan != null)
+                        {
+                        @foreach (var item in DataDapukan)
+                        {
+                        <option value="@item.Nama">@item.Nama</option>
+
+                        }
+                        }
+                        </select>
+                        <ValidationMessage For="@(() => TaskObject.Dapukan)" />
+                        </div>
+
+                        <div class="form-group">
+                        <label for="nama">Nama</label>
+                        <input type="hidden" @bind-value="@TaskObject.Id" />
+                        <InputText id="nama" class="form-control" @bind-Value="@TaskObject.Nama" />
+                        <ValidationMessage For="@(() => TaskObject.Nama)" />
+                        </div>*@
+
+                    <div class="form-group">
+                        <label for="ket">Keterangan</label>
+                        <InputTextArea id="ket" class="form-control" @bind-Value="@TaskObject.Keterangan" />
+                        <ValidationMessage For="@(() => TaskObject.Keterangan)" />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="oleh">Penilaian Oleh</label>
+                        <InputText id="oleh" class="form-control" @bind-Value="@TaskObject.PenilaianOleh" />
+                        <ValidationMessage For="@(() => TaskObject.PenilaianOleh)" />
+                    </div>
+
+                    @if (DataScore != null)
+                    {
+                        <div class="table-responsive" style="overflow-y:auto;">
+                            <table id="gridData2" name="gridData" class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Parameter</th>
+                                        <th>Nilai</th>
+                                        <th>Keterangan</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in DataScore)
+                                    {
+                                        <tr>
+
+                                            <td>@item.Kpi?.Parameter</td>
+                                            <td><input type="number" min="1" max="5" @bind="@item.Nilai" /></td>
+                                            <td><input type="text" @bind="@item.Keterangan" /></td>
+
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    MoslemToolkit.Data.KPIService Kpisvc;
+
+    MoslemToolkit.Data.TimService Timsvc;
+    public IEnumerable<Tim> DataTim { get; set; }
+
+    MoslemToolkit.Data.KPIBatchService Batchsvc;
+    public IEnumerable<KPIBatch> DataBatch { get; set; }
+
+    MoslemToolkit.Data.DapukanService Dapukansvc;
+    public IEnumerable<Dapukan> DataDapukan { get; set; }
+
+    MoslemToolkit.Data.KPIScoreService KpiScoresvc;
+    public List<KPIScore> DataScore { get; set; }
+
+    public long TimId;
+
+    public string FileUrl { get; set; }
+    [Parameter]
+    public RenderFragment CustomHeader { get; set; }
+    KPIScoreHeader _taskobj;
+    [Parameter]
+    public KPIScoreHeader TaskObject
+    {
+        get { return _taskobj; }
+        set { 
+            this._taskobj = value;
+            Refresh();
+        }
+    }
+    [Parameter]
+    public Action DataChanged { get; set; }
+    MoslemToolkit.Data.KPIScoreHeaderService service;
+
+
+    void TimSelect(ChangeEventArgs e)
+    {
+        TimId = long.Parse(e.Value.ToString());
+        var tim = Timsvc.GetDataById(TimId);
+        TaskObject.Nama = tim.Nama;
+        TaskObject.Dapukan = tim.Tugas;
+        PopulateScore();
+        //Console.WriteLine("It is definitely: " + SelectedString);
+    }
+
+    void PopulateScore()
+    {
+        if (TaskObject != null && !string.IsNullOrEmpty(TaskObject.Dapukan)) {
+            var datas = Kpisvc.GetDataByDapukan(TaskObject.Dapukan);
+            if (DataScore == null) DataScore = new List<KPIScore>();
+            DataScore.Clear();
+            foreach(var item in datas)
+            {
+                DataScore.Add(new KPIScore() { Id=0, Keterangan = "-", KPIId = item.Id, Nilai = 1, Kpi = item });
+            }
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new KPIScoreHeaderService();
+        if (Dapukansvc == null) Dapukansvc = new DapukanService();
+        if (Timsvc == null) Timsvc = new TimService();
+        if (Batchsvc == null) Batchsvc = new KPIBatchService();
+        if (KpiScoresvc == null) KpiScoresvc = new KPIScoreService();
+        if (Kpisvc == null) Kpisvc = new KPIService();
+        DataDapukan = Dapukansvc.GetAllData();
+        DataBatch = Batchsvc.GetAllData();
+        DataTim = Timsvc.GetAllData();
+
+
+    }
+    private async void HandleValidSubmit()
+    {
+
+
+        if (TaskObject.Id == 0)
+        {
+
+            var res = service.InsertData(TaskObject);
+            if (res)
+            {
+                foreach(var score in DataScore)
+                {
+                    score.KPIScoreHeaderId = TaskObject.Id;
+                    score.Kpi = null;
+                    res = KpiScoresvc.InsertData(score);
+                }
+            }
+
+        }
+        else
+        {
+            var res = service.UpdateData(TaskObject);
+            if (res)
+            {
+                foreach(var score in DataScore)
+                {
+                    score.KPIScoreHeaderId = TaskObject.Id;
+
+                    KpiScoresvc.UpdateData(score);
+                }
+            }
+        }
+
+        await CloseTaskModal();
+        DataChanged?.Invoke();
+    }
+
+
+    public void Refresh()
+    {
+        if (TaskObject.Id != 0 && TaskObject.KPIScores!=null)
+        {
+            DataScore = TaskObject.KPIScores?.ToList();
+            foreach(var score in DataScore)
+            {
+                score.Kpi = Kpisvc.GetDataById(score.KPIId);
+            }
+        }
+    }
+
+    private async Task CloseTaskModal()
+    {
+        await jsRuntime.InvokeAsync<object>("CloseModal", "taskModal");
+    }
+
+
+}

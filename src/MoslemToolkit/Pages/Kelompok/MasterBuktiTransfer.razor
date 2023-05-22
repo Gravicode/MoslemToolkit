@@ -1,0 +1,192 @@
+﻿@page "/master/BuktiTransfer"
+
+@inject IJSRuntime jsRuntime
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject NavigationManager NavMgr
+@*@namespace MoslemToolkit.Pages.Master*@
+@inject IToastService toastService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+
+@using System.IO
+<h1>Informasi Bukti Transfer Sodakoh, Infaq, Qurban, dsb</h1>
+
+<p>Gunakan halaman ini untuk melihat data Bukti Transfer dari jamaah.</p>
+
+@if (DataBuktiTransfer == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <body onbeforeunload="TestDataTablesRemove('#gridData')">
+        <div class="table-responsive">
+            <table id="gridData" name="gridData" class="table table-striped">
+                <thead>
+                    <tr>
+                       
+                        <th>Tanggal</th>
+                        <th>Tujuan/Keperluan</th>
+                        <th>Nama Pengirim</th>
+                        <th>Nama Bank</th>
+                        <th>No. Rekening / No. Gopay</th>
+                        <th>Nama Rekening</th>
+                        <th>Nomor Hp</th>
+                        <th>Jumlah (Rp)</th>
+                        <th>Keterangan</th>
+                        <th>Lampiran (bukti)</th>
+                        <th>Actions</th>
+                    </tr>
+
+                </thead>
+                <tbody>
+                    @foreach (var item in DataBuktiTransfer)
+                    {
+                        <tr>
+                            <td>@item.Tanggal.ToString("dd/MMM/yyyy")</td>
+                            <td>@item.Tujuan</td>
+                            <td>@item.NamaPengirim</td>
+                            <td>@item.NamaBank</td>
+                            <td>@item.NoRekening</td>
+                            <td>@item.NamaRekening</td>
+                            <td>@item.NomorHp</td>
+                            <td>@item.Jumlah.ToString("n2")</td>
+                            <td>@item.Keterangan</td>
+                            <td><img width="300" src="@item.LampiranUrl" alt="lampiran" /></td>
+                            <td>
+
+                               
+                                    <input type="button" class="btn btn-primary" @onclick="(() => PrepareForEdit(item))" data-toggle="modal" data-target="#taskModal" value="Ubah" />
+                                    <input type="button" class="btn btn-danger" @onclick="(() => PrepareForDelete(item))" data-toggle="modal" data-target="#confirmDeleteModal" value="Hapus" />
+                                
+                            </td>
+
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </body>
+}
+    <div>
+        <input type="button" data-toggle="modal" data-target="#taskModal" class="btn btn-primary" value="Tambah Bukti Transfer" @onclick="(() => InitializeitemObject())" />
+   
+        <input type="button"  class="btn btn-success" value="Kembali" @onclick='(() => { NavMgr.NavigateTo("/"); })' />
+    </div>
+
+<ConfirmDialog OnClick="@Delete" />
+<BuktiTransferDetail @ref="detail" TaskObject=@itemObject DataChanged="@DataChanged">
+    <CustomHeader>@customHeader</CustomHeader>
+</BuktiTransferDetail>
+
+@code {
+    bool HasLogin = false;
+    BuktiTransferDetail detail;
+    MoslemToolkit.Data.BuktiTransferService service;
+    string customHeader = string.Empty;
+    List<BuktiTransfer> DataBuktiTransfer;
+    BuktiTransfer itemObject = new BuktiTransfer();
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    string UserName;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new BuktiTransferService();
+
+
+
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (DataBuktiTransfer != null && DataBuktiTransfer.Count > 0)
+        {
+
+            await jsRuntime.InvokeAsync<object>("TestDataTablesAdd", "#gridData");
+        }
+        if (firstRender)
+        {
+            if (string.IsNullOrEmpty(UserName))
+            {
+                try
+                {
+                    UserName = await localStorage.GetItemAsync<string>(AppConstants.NameKey);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+                if (string.IsNullOrEmpty(UserName))
+                {
+                    NavMgr.NavigateTo($"/login");
+                }
+                else if (!string.IsNullOrEmpty(UserName) && UserName == AppConstants.USER_ADMIN)
+                {
+                    HasLogin = true;
+
+                }
+                RefreshData();
+                StateHasChanged();
+            }
+        }
+    }
+    void RefreshData()
+    {
+        if (HasLogin)
+        {
+            DataBuktiTransfer = service.GetAllData();
+        }
+        else
+        {
+            DataBuktiTransfer = service.GetDataByUsername(UserName);
+        }
+
+    }
+    private void InitializeitemObject()
+    {
+
+        itemObject = new BuktiTransfer();
+        itemObject.Tujuan = "Sodakoh Lemparan";
+        itemObject.NamaPengirim = UserName;
+        itemObject.NamaRekening = UserName;
+        itemObject.Tanggal = DateTime.Now;
+        itemObject.DibuatOleh = UserName;
+        detail.FileUrl = "";
+
+        //itemObject.Id = -1;
+
+        customHeader = "Tambah Bukti Transfer";
+    }
+    private async void DataChanged()
+    {
+        RefreshData();
+        StateHasChanged();
+    }
+
+    private void PrepareForEdit(BuktiTransfer item)
+    {
+        customHeader = "Ubah Bukti Transfer";
+        itemObject = item;
+        detail.FileUrl = item.LampiranUrl;
+    }
+    private void PrepareForDelete(BuktiTransfer item)
+    {
+        itemObject = item;
+    }
+    private async Task Delete()
+    {
+        var task = service.DeleteData(itemObject.Id);
+        await jsRuntime.InvokeAsync<object>("CloseModal", "confirmDeleteModal");
+        RefreshData();
+        itemObject = new BuktiTransfer() { Id = -1 };
+    }
+
+    private async System.Threading.Tasks.Task applyPager(string TableName)
+    {
+        await jsRuntime.InvokeAsync<object>("applyPager", TableName);
+    }
+
+}

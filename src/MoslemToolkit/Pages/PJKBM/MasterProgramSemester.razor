@@ -1,0 +1,133 @@
+﻿@page "/master/ProgramSemester"
+@layout MainLayoutPJKBM
+
+@inject IJSRuntime jsRuntime
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject NavigationManager NavMgr
+@inject IToastService toastService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@using System.Globalization
+<h1>Daftar Program per Semester</h1>
+
+<p>Gunakan halaman ini untuk menyimpan Program per Semester</p>
+
+<div class="row">
+    <div class="col col-12">
+        <div class="form-group">
+            <label for="Kelas" class="col-sm-2 col-form-label">Kelas</label>
+            <div class="col-sm-11">
+                <select @bind="KelasId">
+                    <option value="-1">Pilih</option>
+                    @foreach (var template in DataKelas)
+                    {
+                        <option value=@template.Id>@template.Nama</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="Tahun" class="col-sm-2 col-form-label">Tahun</label>
+            <div class="col-sm-11">
+                <select @bind="Tahun">
+                    <option value="-1">Pilih</option>
+                    @foreach (var tahun in ListTahun)
+                    {
+                        <option value=@tahun>@tahun</option>
+                    }
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="Semester" class="col-sm-2 col-form-label">Semester</label>
+            <div class="col-sm-11">
+                <select @bind="Semester">
+                    <option value="1">Semester Ganjil</option>
+                    <option value="2">Semester Genap</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <button @onclick="Lihat" class="btn btn-success mb-2">Lihat</button>
+        </div>
+    </div>
+
+</div>
+
+@if (DataProgramSemester == null)
+{
+    <p><em>Pilih Filter lalu klik Lihat...</em></p>
+}
+else
+{
+        <div class="table_container">
+            <table id="gridData" name="gridData" class="table_freeze table table-bordered table-hover table-striped">
+                <thead>
+                    <tr>
+                        <th rowspan="2">No</th>
+                        <th rowspan="2">Materi</th>
+                        <th rowspan="2">Penjabaran Materi</th>
+                        @for (int i = 0; i < 6; i++)
+                        {
+                            <th colspan="4">@GetMonthName(i + StartMonth)</th>
+                        }
+                        <th rowspan="2">Keterangan</th>
+                    </tr>
+                    <tr>
+
+                        @for (int i = 0; i < 6; i++)
+                        {
+                            @for (int x = 1; x < 5; x++)
+                            {
+                                <th>@x</th>
+                            }
+                        }
+
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        var counter = 0;
+                    }
+                    @foreach (var materi in DataMateriPerKelas)
+                    {
+                        counter++;
+                        <tr>
+                            <td>@counter</td>
+                            <td>@materi.Materi.Bab.Nama</td>
+                            <td>@materi.Materi.Nama</td>
+                            @for (int i = 0; i < 6; i++)
+                            {
+                                currentMonth = StartMonth + i;
+                            @for (int x = 0; x < 4; x++)
+                            {
+                                currentWeek = x + 1;
+                                var item = GetProgramItem(materi.Id, currentMonth, currentWeek);
+                                if (HasLogin)
+                                {
+                                    <td><input type="checkbox" @bind="@item.Checked" /></td>
+                                }
+                                else
+                                {
+                                    <td>@(item.Checked?"X":"-")</td>
+                                }
+                            }
+                }
+                            <td>
+                                <textarea @bind="materi.Keterangan"></textarea>
+                            </td>
+                        </tr>
+                    }
+
+                </tbody>
+            </table>
+        </div>
+   
+}
+@if (HasLogin)
+{
+    <div>
+        <input type="button" class="btn btn-primary mt-2" value="Simpan" @onclick="(() => Simpan())" />
+    </div>
+}

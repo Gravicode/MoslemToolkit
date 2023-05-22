@@ -1,0 +1,132 @@
+﻿@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@using MoslemToolkit.Helpers
+
+@inject IJSRuntime jsRuntime
+@*@namespace MoslemToolkit.Pages.Master*@
+@using System.IO
+@inject IToastService toastService
+@inject AzureBlobHelper blob;
+
+<div class="modal" tabindex="-1" role="dialog" id="taskModal">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@CustomHeader</h5>
+
+
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@TaskObject" OnValidSubmit="@HandleValidSubmit">
+                    <DataAnnotationsValidator />
+
+                 
+
+                    <div class="form-group">
+                        <label for="nourut">No Urut</label>
+                        <InputDate id="nourut" class="form-control" @bind-Value="@TaskObject.No" />
+                        <ValidationMessage For="@(() => TaskObject.No)" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="nama">Nama Lengkap</label>
+                        <InputText id="nama" class="form-control" @bind-Value="@TaskObject.Nama" />
+                        <ValidationMessage For="@(() => TaskObject.Nama)" />
+                    </div>
+
+
+                     <div class="form-group">
+                        <label for="jumlah">Jumlah</label>
+                        <input type="number" id="jumlah" class="form-control" @bind="@TaskObject.Jumlah" />
+                        <ValidationMessage For="@(() => TaskObject.Jumlah)" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="aznab">Aznab</label>
+                        <select @bind="@TaskObject.TipeAsnab" id="aznab">
+                            <option value="-">Pilih</option>
+                            @foreach (TipeAsnab item in Enum.GetValues(typeof(TipeAsnab)))
+                            {
+                                <option value="@item">@item.ToString()</option>
+
+                            }
+                        </select>
+                        <ValidationMessage For="@(() => TaskObject.TipeAsnab)" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="beras">Beras (sok)</label>
+                        <input type="number" id="beras" class="form-control" @bind="@TaskObject.Beras" />
+                        <ValidationMessage For="@(() => TaskObject.Beras)" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="titip">Uang (Rp)</label>
+                        <input type="number" id="titip" class="form-control" @bind="@TaskObject.Uang" />
+                        <ValidationMessage For="@(() => TaskObject.Uang)" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tahun">Tahun</label>
+                        <input type="number" id="tahun" class="form-control" @bind="@TaskObject.Tahun" />
+                        <ValidationMessage For="@(() => TaskObject.Tahun)" />
+                    </div>
+
+                  
+                
+                <button type="submit" class="btn btn-primary">Simpan</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+   
+    [Parameter]
+    public RenderFragment CustomHeader { get; set; }
+    [Parameter]
+    public Mustahik TaskObject { get; set; }
+    [Parameter]
+    public Action DataChanged { get; set; }
+    MoslemToolkit.Data.MustahikService service;
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new MustahikService();
+     
+    }
+    private async void HandleValidSubmit()
+    {
+
+      
+      
+        if (TaskObject.Id == 0)
+        {
+
+            var hasil = service.InsertData(TaskObject);
+            if (!hasil)
+            {
+                toastService.ShowError("Gagal menyimpan data. Isi data dengan lengkap.");
+            }
+        }
+        else
+        {
+            service.UpdateData(TaskObject);
+        }
+
+        await CloseTaskModal();
+        DataChanged?.Invoke();
+    }
+    private async Task CloseTaskModal()
+    {
+        await jsRuntime.InvokeAsync<object>("CloseModal", "taskModal");
+    }
+
+
+}

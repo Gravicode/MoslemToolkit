@@ -1,0 +1,105 @@
+﻿@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject IJSRuntime jsRuntime
+@*@namespace MoslemToolkit.Pages.Master*@
+@using System.IO
+@inject IToastService toastService
+
+<div class="modal" tabindex="-1" role="dialog" id="taskModal">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@CustomHeader</h5>
+
+
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@TaskObject" OnValidSubmit="@HandleValidSubmit">
+                    <DataAnnotationsValidator />
+
+                    <div class="form-group">
+                        <label for="nama">Nama</label>
+                        <input type="hidden" @bind-value="@TaskObject.Id" />
+                          <select @bind="@TaskObject.JamaahId" id="nama">
+                            <option value="-1">Pilih</option>
+                            @foreach(var jm in DataJamaah){
+                            <option value="@jm.Id">@jm.Nama</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="pekerjaan">Pekerjaan</label>
+                        <InputTextArea id="pekerjaan" class="form-control" @bind-Value="@TaskObject.Pekerjaan" />
+                        <ValidationMessage For="@(() => TaskObject.Pekerjaan)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="frekuensi">Frequensi Infaq</label>
+                         <select @bind="@TaskObject.Frekuensi" id="frekuensi">
+                            <option value="-">Pilih</option>
+                             @foreach (FrequensiInfaq item in Enum.GetValues(typeof(FrequensiInfaq)))
+                            {
+                                <option value="@item">@item.ToString()</option>
+
+                            }
+                        </select>
+                        <ValidationMessage For="@(() => TaskObject.Frekuensi)" />
+                    </div>
+
+
+                    <button type="submit" class="btn btn-primary btn-sm mt-1">Simpan</button>
+                    <button type="button" class="btn btn-secondary btn-sm mt-1" data-dismiss="modal">Cancel</button>
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    [Parameter]
+    public RenderFragment CustomHeader { get; set; }
+    [Parameter]
+    public ProfilInfaqJamaah TaskObject { get; set; }
+    [Parameter]
+    public Action DataChanged { get; set; }
+    MoslemToolkit.Data.ProfilInfaqJamaahService service;
+    MoslemToolkit.Data.JamaahService Jamaahsvc;
+    List<Jamaah> DataJamaah;
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new ProfilInfaqJamaahService();
+        if (Jamaahsvc == null) Jamaahsvc = new JamaahService();
+        DataJamaah = Jamaahsvc.GetAllData();
+
+    }
+    private async void HandleValidSubmit()
+    {
+
+        if (TaskObject.Id == 0)
+        {
+
+            service.InsertData(TaskObject);
+
+        }
+        else
+        {
+            service.UpdateData(TaskObject);
+        }
+
+        await CloseTaskModal();
+        DataChanged?.Invoke();
+    }
+
+
+
+    private async Task CloseTaskModal()
+    {
+        await jsRuntime.InvokeAsync<object>("CloseModal", "taskModal");
+    }
+
+
+}

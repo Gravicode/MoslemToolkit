@@ -1,0 +1,432 @@
+﻿@page "/data-zakat2"
+<h3>Data Zakat</h3>
+
+@using System.IO
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@using System.Linq
+@inject IToastService toastService
+
+@inject IJSRuntime jsRuntime
+<div id="canvas1" style="background-color:white;" class="container-fluid">
+
+
+    <div class="row">
+        <div class="col col-12">
+            <div class="form-group">
+                <label for="nama" class="col-sm-2 col-form-label">Tahun</label>
+                <div class="col-sm-11">
+                    <input type="number" @bind="Tahun" id="tahun">
+                </div>
+            </div>
+            <button @onclick="Refresh" class="btn btn-success">Refresh</button>
+        </div>
+
+    </div>
+    <hr />
+    <h3>Summary</h3>
+    <div class="row">
+        <table class="table">
+            <tr>
+                <td>Keterangan</td>
+                <td>Nilai</td>
+            </tr>
+            <tr>
+                <td>Tahun</td>
+                <td>@Tahun</td>
+            </tr>
+            <tr>
+                <td>Total Beras (sok)</td>
+                <td>@TotalBeras.ToString("n0")</td>
+            </tr>
+            <tr>
+                <td>Total Uang Titipan Zakat (Rp)</td>
+                <td>Rp. @TotalUang.ToString("n0")</td>
+            </tr>
+            <tr>
+                <td>Total dalam Sok</td>
+                <td>@TotalDalamBeras.ToString("n2") sok</td>
+            </tr>
+            <tr>
+                <td>Harga Beras</td>
+                <td>@HargaBeras.ToString("n0")</td>
+            </tr>
+
+        </table>
+    </div>
+    <h3>Muzaki</h3>
+    <div class="row">
+        <div class="col-6">
+            <table class="table">
+                <tr>
+                    <td>Keterangan</td>
+                    <td>Jumlah</td>
+                    <td>Prosentase</td>
+                </tr>
+                @if (MuzakiStat != null)
+                {
+                    @foreach (var row in MuzakiStat)
+                    {
+                        <tr>
+                            <td>@row.Nama</td>
+                            <td>@row.Total.ToString("n2")</td>
+                            <td>@((row.Prosentase * 100).ToString("n2")) %</td>
+                        </tr>
+                    }
+                }
+                <tr>
+                    <td>Total</td>
+                    <td><b>@(MuzakiStat.Sum(z=>z.Total).ToString("n0"))</b></td>
+                    <td><b>@((MuzakiStat.Sum(z=>z.Prosentase)*100).ToString("n2")) %</b></td>
+                </tr>
+            </table>
+            <hr />
+            <table class="table">
+                <tr>
+                    <td>Keterangan</td>
+                    <td>Jumlah</td>
+                    <td>Prosentase</td>
+                </tr>
+                @if (Stats != null)
+                {
+                    @foreach (var row in Stats)
+                    {
+                        <tr>
+                            <td>@row.Nama</td>
+                            <td>@row.Jumlah.ToString("n0")</td>
+                            <td>@((row.Persen).ToString("n2")) %</td>
+                        </tr>
+                    }
+                }
+                <tr>
+                    <td>Total</td>
+                    <td><b>@(Stats?.Sum(z=>z.Jumlah).ToString("n0"))</b></td>
+                    <td><b>@((Stats?.Sum(z=>z.Persen))?.ToString("n2")) %</b></td>
+                </tr>
+            </table>
+        </div>
+        <div class="col-6">
+            @if (_configMuzaki != null)
+            {
+                <Chart Config="_configMuzaki"></Chart>
+            }
+        </div>
+    </div>
+    <h3>Mustahik</h3>
+    <div class="row">
+        <div class="col-6">
+            <table class="table">
+                <tr>
+                    <td>Keterangan</td>
+                    <td>Jumlah</td>
+                    <td>Prosentase</td>
+                </tr>
+                @if (MustahikStat != null)
+                {
+                    @foreach (var row in MustahikStat)
+                    {
+                        <tr>
+                            <td>@row.Nama</td>
+                            <td>@row.Total.ToString("n2")</td>
+                            <td>@((row.Prosentase * 100).ToString("n2")) %</td>
+                        </tr>
+                    }
+                }
+                <tr>
+                    <td>Total</td>
+                    <td><b>@(MustahikStat.Sum(z=>z.Total).ToString("n0"))</b></td>
+                    <td><b>@((MustahikStat.Sum(z=>z.Prosentase)*100).ToString("n2")) %</b></td>
+                </tr>
+            </table>
+        </div>
+        <div class="col-6">
+            @if (_configMustahik != null)
+            {
+                <Chart Config="_configMustahik"></Chart>
+            }
+        </div>
+    </div>
+    <hr />
+    <h3>Pembagian Zakat</h3>
+    <div class="row">
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <tr>
+                    <td>Penerima</td>
+                    <td>Nama</td>
+                    <td>Persen</td>
+                    <td>Beras</td>
+                    <td>Uang</td>
+
+                </tr>
+                @if (Pembagian != null)
+                {
+                    @foreach (var item in Pembagian)
+                    {
+
+                        <tr>
+                            <td>@item.Jenis</td>
+                            <td>@item.Nama</td>
+                            <td>@((item.Persen*100).ToString("n2")) %</td>
+                            <td>@item.Beras.ToString("n2") sok</td>
+                            <td>Rp. @item.Uang.ToString("n2")</td>
+
+                        </tr>
+                    }
+                    <tr>
+                        <td colspan="2"><b>Total</b></td>
+                        <td><b>@((Pembagian.Sum(x=>x.Persen)*100).ToString("n2")) %</b></td>
+                        <td><b>@(Pembagian.Sum(x=>x.Beras).ToString("n2")) sok</b></td>
+                        <td><b>Rp. @(Pembagian.Sum(x=>x.Uang).ToString("n2"))</b></td>
+
+                    </tr>
+                }
+            </table>
+        </div>
+    </div>
+
+    <hr />
+
+    <h3>Iterasi Pembagian</h3>
+    <div class="row">
+        @if (PembagianDetail != null)
+        {
+            @foreach (var item in PembagianDetail)
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped">
+                        <tr>
+                            <td colspan="7">Pembagian @item.No</td>
+                        </tr>
+                        <tr>
+                            <td colspan="7">@item.TotalPembagian.ToString("n0") sok</td>
+                        </tr>
+                        <tr>
+                            <td>Penerima</td>
+                            <td colspan="4">Beras (sok)</td>
+                            <td>Uang (Rp)</td>
+                            <td>Pembeli</td>
+
+                        </tr>
+                        <tr>
+                            <td>Nama</td>
+                            <td>Sisa Sebelumnya</td>
+                            <td>Diterima</td>
+                            <td>Dijual</td>
+                            <td>Sisa</td>
+                            <td>Hasil Dijual (Rp)</td>
+                            <td>Nama</td>
+                        </tr>
+                        @foreach (var detail in item.Detail)
+                        {
+                            <tr>
+                                <td>@detail.Nama</td>
+                                <td>@detail.SisaSebelumnya.ToString("n2")</td>
+                                <td>@detail.Terima.ToString("n2")</td>
+                                <td><input type="text" @bind="detail.Dijual" /></td>
+                                <td>@detail.Sisa.ToString("n2")</td>
+                                <td>@detail.Uang.ToString("n2")</td>
+                                <td>
+                                    @{
+                                        var names = detail.DibeliOleh.Count > 0 ? String.Join(", ", detail.DibeliOleh.Select(x => x.Nama).ToArray()) : "-";
+                                    }
+                                    @names
+                                </td>
+                            </tr>
+                        }
+                        <tr>
+                            <td><b>Total</b></td>
+                            <td><b>@item.TotalBerasSisaSebelumnya.ToString("n2")</b></td>
+                            <td><b>@item.TotalPembagian.ToString("n2")</b></td>
+                            <td><b>@item.TotalBerasDijual.ToString("n2")</b></td>
+                            <td><b>@item.TotalBerasSisa.ToString("n2")</b></td>
+                            <td><b>Rp. @item.TotalUang.ToString("n2")</b></td>
+                            <td></td>
+
+                        </tr>
+                    </table>
+                </div>
+
+            }
+
+            <button class="btn btn-success mr-1 mb-1" @onclick="SimpanData">Simpan Data</button>
+            <button class="btn btn-primary mr-1 mb-1" @onclick="HitungTotalPembagianDariIterasi">Re-kalkulasi</button>
+            <button class="btn btn-info mr-1 mb-1" @onclick="LoadState">Load State</button>
+            <button class="btn btn-info mr-1 mb-1" @onclick="SaveState">Save State</button>
+            <button class="btn btn-warning mr-1 mb-1" @onclick="ClearPenjualan">Reset Penjualan</button>
+            <button class="btn btn-warning mr-1 mb-1" @onclick="CaptureScreen">Download As Image</button>
+            <button class="btn btn-primary mr-1 mb-1" @onclick="CetakReport">Download Report</button>
+
+
+        }
+    </div>
+    <div class="row">
+        <div class="alert alert-info mt-2">
+            @if (Progress > 0)
+            {
+                <div class="progress">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="@Progress" aria-valuemin="0" aria-valuemax="100" style="width: @Progress%"></div>
+                </div>
+            }
+            @PesanStatus
+        </div>
+    </div>
+    <hr />
+    <h3>Pembagian Khusus (Dalam Bentuk Uang)</h3>
+    <div class="row">
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <tr>
+                    <td>Nama</td>
+                    <td>Beras (sok)</td>
+                    <td>Harga Jual Beras (Rp)/Sok</td>
+                    <td>Total Jual Beras (Rp)</td>
+                    <td>Uang</td>
+                    <td>Total Jual Beras + Uang</td>
+                </tr>
+                @if (Pembagian != null)
+                {
+                    SubTotal = 0;
+                    Total = 0;
+                    @foreach (var item in Pembagian)
+                    {
+                        @if (item.Jenis != "Aznab" && item.Nama != "Kelompok")
+                        {
+                            SubTotal += (item.Beras * HargaJualBeras);
+                            Total += (item.Beras * HargaJualBeras) + item.Uang;
+                            <tr>
+                                <td>@item.Nama</td>
+                                <td>@item.Beras.ToString("n2") sok</td>
+                                <td><input type="text" @bind="HargaJualBeras" /></td>
+                                <td>Rp. @((item.Beras * HargaJualBeras).ToString("n0"))</td>
+                                <td>Rp. @item.Uang.ToString("n0")</td>
+                                <td>Rp. @(((item.Beras * HargaJualBeras)+item.Uang).ToString("n0"))</td>
+                            </tr>
+                        }
+                    }
+                    <tr>
+                        <td colspan="3">Sub Total</td>
+                        <td><b>Rp. @SubTotal.ToString("n0")</b></td>
+                        <td>Total</td>
+                        <td><b>Rp. @Total.ToString("n0")</b></td>
+                    </tr>
+                }
+            </table>
+        </div>
+    </div>
+    <div class="row">
+        <hr />
+        <h4>Muzaki Titip Beras:</h4>
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+                <tr>
+                    <td>No</td>
+                    <td>KK</td>
+                    <td>Nama</td>
+                    <td>Sudah Tercatat</td>
+                    <td>Sudah Zakat</td>
+                    @*<td>Sudah Realisasi</td>*@
+                </tr>
+                @{
+                    var counter = 1;
+                }
+                @foreach (var orang in MuzakiBeras.OrderBy(x=>x.KK).ThenBy(x=>x.NoUrut))
+                {
+
+                    <tr>
+                        <td>@(counter++)</td>
+                        <td>@orang.KK</td>
+                        <td>@if(orang.Posisi == PosisiKeluarga.KK)
+                            {
+                                <b>@orang.Nama</b>
+                            }
+                            else
+                            {
+                                @orang.Nama
+                            }
+                        </td>
+                        <td>@(orang.SudahTercatat?"Sudah":"Belum")</td>
+                        <td><input type="checkbox" @bind="@orang.SudahZakat" /></td>
+                        @*<td><input type="checkbox" @bind="@orang.SudahRealisasi" /></td>*@
+
+                    </tr>
+                }
+            </table>
+        </div>
+        <h4>Muzaki Titip Uang:</h4>
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+                <tr>
+                    <td>No</td>
+                    <td>KK</td>
+                    <td>Nama</td>
+                    <td>Sudah Tercatat</td>
+                    <td>Sudah Zakat</td>
+                    @*<td>Sudah Realisasi</td>*@
+                </tr>
+                @{
+                    counter = 1;
+                }
+                @foreach (var orang in MuzakiUang.OrderBy(x => x.KK).ThenBy(x => x.NoUrut))
+                {
+
+                    <tr>
+                        <td>@(counter++)</td>
+                        <td>@orang.KK</td>
+                        <td>
+                            @if (orang.Posisi == PosisiKeluarga.KK)
+                            {
+                                <b>@orang.Nama</b>
+                            }
+                            else
+                            {
+                                @orang.Nama
+                            }
+                        </td>
+                        <td>@(orang.SudahTercatat?"Sudah":"Belum")</td>
+                        <td><input type="checkbox" @bind="@orang.SudahZakat" /></td>
+                        @*<td><input type="checkbox" @bind="@orang.SudahRealisasi" /></td>*@
+
+                    </tr>
+                }
+            </table>
+        </div>
+        <h4>Muzaki Belum Setor Zakat:</h4>
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+                <tr>
+                    <td>No</td>
+                    <td>KK</td>
+                    <td>Nama</td>
+                    <td>Sudah Tercatat</td>
+                    @*<td>Sudah Realisasi</td>*@
+                </tr>
+                @{
+                    counter = 1;
+                }
+                @foreach (var orang in MuzakiBelum.OrderBy(x => x.KK).ThenBy(x => x.NoUrut))
+                {
+
+                    <tr>
+                        <td>@(counter++)</td>
+                        <td>@orang.KK</td>
+                        <td>
+                            @if (orang.Posisi == PosisiKeluarga.KK)
+                            {
+                                <b>@orang.Nama</b>
+                            }
+                            else
+                            {
+                                @orang.Nama
+                            }
+                        </td>
+                        <td>@(orang.SudahTercatat?"Sudah":"Belum")</td>
+                        @*<td><input type="checkbox" @bind="@orang.SudahRealisasi" /></td>*@
+
+                    </tr>
+                }
+            </table>
+        </div>
+
+    </div>
+</div>

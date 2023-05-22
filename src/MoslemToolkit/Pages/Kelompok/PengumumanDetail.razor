@@ -1,0 +1,95 @@
+﻿@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject IJSRuntime jsRuntime
+@*@namespace MoslemToolkit.Pages.Master*@
+@using System.IO
+@inject IToastService toastService
+
+<div class="modal" tabindex="-1" role="dialog" id="taskModal">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@CustomHeader</h5>
+
+
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@TaskObject" OnValidSubmit="@HandleValidSubmit">
+                    <DataAnnotationsValidator />
+
+                    <div class="form-group">
+                        <label for="judul">Judul</label>
+                        <input type="hidden" @bind-value="@TaskObject.Id" />
+                        <InputText id="judul" class="form-control" @bind-Value="@TaskObject.Judul" />
+                        <ValidationMessage For="@(() => TaskObject.Judul)" />
+                    </div>
+
+
+                    <div class="form-group">
+                        <label for="isi">Isi</label>
+                        <InputTextArea id="isi" class="form-control" @bind-Value="@TaskObject.Isi" />
+                        <ValidationMessage For="@(() => TaskObject.Isi)" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tanggal">tanggal</label>
+                        <InputDate id="tanggal" class="form-control" @bind-Value="@TaskObject.Tanggal" />
+                        <ValidationMessage For="@(() => TaskObject.Tanggal)" />
+                    </div>
+
+
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    public string FileUrl { get; set; }
+    [Parameter]
+    public RenderFragment CustomHeader { get; set; }
+    [Parameter]
+    public Pengumuman TaskObject { get; set; }
+    [Parameter]
+    public Action DataChanged { get; set; }
+    MoslemToolkit.Data.PengumumanService service;
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new PengumumanService();
+
+    }
+    private async void HandleValidSubmit()
+    {
+
+
+        if (TaskObject.Id == 0)
+        {
+
+            service.InsertData(TaskObject);
+
+        }
+        else
+        {
+            service.UpdateData(TaskObject);
+        }
+
+        await CloseTaskModal();
+        DataChanged?.Invoke();
+    }
+
+
+
+    private async Task CloseTaskModal()
+    {
+        await jsRuntime.InvokeAsync<object>("CloseModal", "taskModal");
+    }
+
+
+}

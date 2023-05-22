@@ -1,0 +1,171 @@
+﻿@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject IJSRuntime jsRuntime
+@*@namespace MoslemToolkit.Pages.Master*@
+@using System.IO
+@inject IToastService toastService
+@inject AzureBlobHelper blob;
+
+<div class="modal" tabindex="-1" role="dialog" id="taskModal">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@CustomHeader</h5>
+
+
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@TaskObject" OnValidSubmit="@HandleValidSubmit">
+                    <DataAnnotationsValidator />
+
+                    <div class="form-group">
+                        <input type="hidden" @bind-value="@TaskObject.Id" />
+                        <label for="tugas">Status</label>
+                        <select @bind="@TaskObject.Tugas" id="tugas">
+                            <option value="-">Pilih</option>
+                            @if (DataDapukan != null)
+                            {
+                                @foreach (var item in DataDapukan)
+                                {
+                                    <option value="@item.Nama">@item.Nama</option>
+
+                                }
+                            }
+                        </select>
+                        <ValidationMessage For="@(() => TaskObject.Tugas)" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="cari">Cari jamaah</label>
+                        <BlazoredTypeahead SearchMethod="SearchNama"
+                                           @bind-Value="@SelJamaah"
+                                           Placeholder="cari berdasarkan nama...">
+                            <SelectedTemplate Context="orang">
+                                @orang.Nama
+                            </SelectedTemplate>
+                            <ResultTemplate Context="orang">
+                                @orang.Nama
+                            </ResultTemplate>
+                        </BlazoredTypeahead>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="nama">Nama Lengkap</label>
+                        <InputText id="nama" class="form-control" @bind-Value="@TaskObject.Nama" />
+                        <ValidationMessage For="@(() => TaskObject.Nama)" />
+                    </div>
+
+
+                    <div class="form-group">
+                        <label for="phone">Telepon</label>
+                        <InputText id="phone" class="form-control" @bind-Value="@TaskObject.Telepon" />
+                        <ValidationMessage For="@(() => TaskObject.Telepon)" />
+                    </div>
+
+
+                    <div class="form-group">
+                        <label for="alamat">Alamat</label>
+                        <InputTextArea id="alamat" class="form-control" @bind-Value="@TaskObject.Alamat" />
+                        <ValidationMessage For="@(() => TaskObject.Alamat)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="urutan">Urutan</label>
+                        <InputNumber id="urutan" class="form-control" @bind-Value="@TaskObject.Urutan" />
+                        <ValidationMessage For="@(() => TaskObject.Urutan)" />
+                    </div>
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    Jamaah _jamaah;
+    public Jamaah SelJamaah { get { return _jamaah; }
+        set {
+            _jamaah = value;
+            if (_jamaah != null)
+            {
+                this.TaskObject.Nama = _jamaah.Nama;
+                this.TaskObject.Telepon = _jamaah.Telepon;
+                this.TaskObject.Alamat = _jamaah.Alamat;
+            }
+        } }
+    //public string FileUrl { get; set; }
+    [Parameter]
+    public RenderFragment CustomHeader { get; set; }
+    [Parameter]
+    public Tim TaskObject { get; set; }
+    [Parameter]
+    public Action DataChanged { get; set; }
+    MoslemToolkit.Data.TimService service;
+    MoslemToolkit.Data.JamaahService jmsvc;
+    MoslemToolkit.Data.DapukanService Dapukansvc;
+    public IEnumerable<Dapukan> DataDapukan { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new TimService();
+        if (jmsvc == null) jmsvc = new JamaahService();
+        if (Dapukansvc == null) Dapukansvc = new  DapukanService();
+        DataDapukan = Dapukansvc.GetAllData();
+        //FileUrl = TaskObject.FileUrl;
+    }
+    private async Task<IEnumerable<Jamaah>> SearchNama(string searchText)
+    {
+        var datas = jmsvc.FindByKeyword(searchText);
+        return await Task.FromResult(datas);
+    }
+    private async void HandleValidSubmit()
+    {
+        if(!string.IsNullOrEmpty(TaskObject.Tugas))
+            TaskObject.Urutan = DataDapukan.Where(x => x.Nama == TaskObject.Tugas).FirstOrDefault().OrderNo;
+        if (TaskObject.Id == 0)
+        {
+
+            var hasil = service.InsertData(TaskObject);
+            if (!hasil)
+            {
+                toastService.ShowError("Gagal menyimpan data. Isi data dengan lengkap.");
+            }
+        }
+        else
+        {
+            service.UpdateData(TaskObject);
+        }
+
+        await CloseTaskModal();
+        DataChanged?.Invoke();
+    }
+
+    //async Task HandleFileSelected(IFileListEntry[] files)
+    //{
+    //    var file = files.FirstOrDefault();
+    //    if (file != null)
+    //    {
+    //        // Just load into .NET memory to show it can be done
+    //        // Alternatively it could be saved to disk, or parsed in memory, or similar
+
+    //        var ms = new MemoryStream();
+    //        await file.Data.CopyToAsync(ms);
+    //        //var bytes = ImageHelper.FixedSize(ms, 300, 300, false);
+    //        string newName = $"Tim_{DateTime.Now.ToString("dd_MM_yyyy")}_{Path.GetFileNameWithoutExtension(file.Name)}{Path.GetExtension(file.Name)}";
+    //        var bytes = ms.ToArray();
+    //        ms.Dispose();
+    //        await blob.UploadFile(newName, bytes);
+    //        FileUrl = $"{AppConstants.UploadUrlPrefix}/{newName}";
+    //    }
+    //}
+
+    private async Task CloseTaskModal()
+    {
+        await jsRuntime.InvokeAsync<object>("CloseModal", "taskModal");
+    }
+
+
+}

@@ -1,0 +1,389 @@
+
+#blazor-error-ui {
+    background: lightyellow;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+    #blazor-error-ui .dismiss {
+        cursor: pointer;
+        position: absolute;
+        right: 0.75rem;
+        top: 0.5rem;
+    }
+
+.blazor-error-boundary {
+    background: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTYiIGhlaWdodD0iNDkiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIG92ZXJmbG93PSJoaWRkZW4iPjxkZWZzPjxjbGlwUGF0aCBpZD0iY2xpcDAiPjxyZWN0IHg9IjIzNSIgeT0iNTEiIHdpZHRoPSI1NiIgaGVpZ2h0PSI0OSIvPjwvY2xpcFBhdGg+PC9kZWZzPjxnIGNsaXAtcGF0aD0idXJsKCNjbGlwMCkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0yMzUgLTUxKSI+PHBhdGggZD0iTTI2My41MDYgNTFDMjY0LjcxNyA1MSAyNjUuODEzIDUxLjQ4MzcgMjY2LjYwNiA1Mi4yNjU4TDI2Ny4wNTIgNTIuNzk4NyAyNjcuNTM5IDUzLjYyODMgMjkwLjE4NSA5Mi4xODMxIDI5MC41NDUgOTIuNzk1IDI5MC42NTYgOTIuOTk2QzI5MC44NzcgOTMuNTEzIDI5MSA5NC4wODE1IDI5MSA5NC42NzgyIDI5MSA5Ny4wNjUxIDI4OS4wMzggOTkgMjg2LjYxNyA5OUwyNDAuMzgzIDk5QzIzNy45NjMgOTkgMjM2IDk3LjA2NTEgMjM2IDk0LjY3ODIgMjM2IDk0LjM3OTkgMjM2LjAzMSA5NC4wODg2IDIzNi4wODkgOTMuODA3MkwyMzYuMzM4IDkzLjAxNjIgMjM2Ljg1OCA5Mi4xMzE0IDI1OS40NzMgNTMuNjI5NCAyNTkuOTYxIDUyLjc5ODUgMjYwLjQwNyA1Mi4yNjU4QzI2MS4yIDUxLjQ4MzcgMjYyLjI5NiA1MSAyNjMuNTA2IDUxWk0yNjMuNTg2IDY2LjAxODNDMjYwLjczNyA2Ni4wMTgzIDI1OS4zMTMgNjcuMTI0NSAyNTkuMzEzIDY5LjMzNyAyNTkuMzEzIDY5LjYxMDIgMjU5LjMzMiA2OS44NjA4IDI1OS4zNzEgNzAuMDg4N0wyNjEuNzk1IDg0LjAxNjEgMjY1LjM4IDg0LjAxNjEgMjY3LjgyMSA2OS43NDc1QzI2Ny44NiA2OS43MzA5IDI2Ny44NzkgNjkuNTg3NyAyNjcuODc5IDY5LjMxNzkgMjY3Ljg3OSA2Ny4xMTgyIDI2Ni40NDggNjYuMDE4MyAyNjMuNTg2IDY2LjAxODNaTTI2My41NzYgODYuMDU0N0MyNjEuMDQ5IDg2LjA1NDcgMjU5Ljc4NiA4Ny4zMDA1IDI1OS43ODYgODkuNzkyMSAyNTkuNzg2IDkyLjI4MzcgMjYxLjA0OSA5My41Mjk1IDI2My41NzYgOTMuNTI5NSAyNjYuMTE2IDkzLjUyOTUgMjY3LjM4NyA5Mi4yODM3IDI2Ny4zODcgODkuNzkyMSAyNjcuMzg3IDg3LjMwMDUgMjY2LjExNiA4Ni4wNTQ3IDI2My41NzYgODYuMDU0N1oiIGZpbGw9IiNGRkU1MDAiIGZpbGwtcnVsZT0iZXZlbm9kZCIvPjwvZz48L3N2Zz4=) no-repeat 1rem/1.8rem, #b32121;
+    padding: 1rem 1rem 1rem 3.7rem;
+    color: white;
+}
+
+    .blazor-error-boundary::after {
+        content: "An error has occurred."
+    }
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Raleway, Arial, Helvetica, sans-serif;
+    /*font-size: 32px;*/
+    font-size:1vw;
+}
+.alt-font {
+    font-family: Bahnschrift, Arial, Helvetica, sans-serif;
+}
+
+.page-background {
+    position: fixed;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 0;
+}
+
+.page-background>img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+}
+
+.page {
+    position: fixed;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.page>.header {
+    display: flex;
+    flex-direction: column;
+    background: rgb(57 57 57 / 70%);
+    color: #fff;
+    backdrop-filter: blur(5px);
+}
+.page>.header img {
+    width: 3.9vw;
+    height: auto;
+}
+.page>.header>.top {
+    display: flex;
+    flex-direction: row;
+    align-content: stretch;
+    align-items: stretch;
+    padding: 0 2vw 0.5vw;
+}
+.page>.header>.top>.logo {
+    margin-right: auto;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+.page>.header>.top>.logo>span {
+    font-size: 2.7em;
+    margin-left: 2vw;
+}
+.page>.header>.top>.calendar {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    font-size: 1.6em;
+}
+.page>.header>.top>.calendar>* {
+    margin-left: 1.8vw;
+}
+.page>.header>.top>.calendar>.dates {
+    text-align: right;
+}
+.page>.header>.top>.calendar>.clock {
+    font-size: 2.6em;
+    font-weight: bold;
+    line-height: 0.9em;
+    position: relative;
+    margin-top: 0.13em;
+}
+.page>.header>.top>.calendar>.clock>.sec {
+    opacity:0;
+    position: relative;
+    padding: 0 0.1vw;
+    display: inline-block;
+}
+.page>.header>.top>.calendar>.clock>.sec.tick {
+    opacity:1;
+}
+/* untuk ticker align center
+.page>.header>.top>.calendar>.clock>.sec {color:transparent;}
+.page>.header>.top>.calendar>.clock>.sec::before {content: ':';position: absolute;top: -0.4vw;left: 0.1vw;z-index: 1;color: #fff;}
+*/
+.hour+.sec {opacity: 0;}
+.hour+.sec.tick {opacity: 1;}
+.banner>.marquee {
+    font-size: 0.92em;
+}
+.page>.header>.top>.calendar>.weather>img {
+    position: relative;
+    width: 6.5vw;
+    margin: 1vw 0;
+}
+.page>.header>.banner {
+    background: rgba(57,57,57,0.3);
+    backdrop-filter: brightness(3) opacity(0.3);
+    display: flex;
+    padding: 1vw 2vw;
+    align-items: center;
+    font-size: 1.6em;
+}
+.page>.header>.banner .title {
+    font-weight: bold;
+    margin-right: 2vw;
+}
+.page>.header>.banner .marquee {
+    white-space: nowrap;
+    overflow: hidden;
+    flex-grow: 1;
+}
+.page>.header>.banner .marquee>.texts>* {
+    display: inline-block;
+    font-size: 0.9em;
+    overflow: hidden;
+    margin-right: 2vw;
+    flex-grow: 1;
+    padding-top: 0.4em;
+}
+.page>.header>.banner .marquee>.texts{
+    -moz-transform:translateX(100%);
+    -webkit-transform:translateX(100%);	
+    transform:translateX(100%);
+    /* Apply animation to this element */	
+    -moz-animation: marquee 25s linear infinite;
+    -webkit-animation: marquee 25s linear infinite;
+    animation: marquee 25s linear infinite;
+}
+.page>.content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+.page>.footer {
+    display: flex;
+    background-color: rgb(84 84 84 / 70%);
+    backdrop-filter: blur(12px);
+    font-size: 1.5em;
+    color: #fff;
+}
+.page>.footer>.event {
+    margin-left: auto;
+    padding: 1vw 2vw 1vw 6vw;
+    background: rgba(255 255 255 / 0.7);
+    color: #5d5d5d;
+}
+.page>.footer .title {
+    font-weight: bold;
+}
+.page>.footer>div>img {
+    float: left;
+    height: 3.2vw;
+    margin-right: 1vw;
+    position: absolute;
+    left: 2vw;
+}
+.page>.footer>div {
+    padding: 1vw 2vw 1vw 5.5vw;
+    position: relative;
+}
+.prayer-schedule {
+    display: flex;
+    padding: 1vw;
+}
+.prayer-schedule>.box {
+    background: rgb(84 84 84 / 70%);
+    backdrop-filter: blur(12px);
+    color: #fff;
+    font-size: 1.6em;
+    text-align: center;
+    position: relative;
+    flex-grow: 1;
+    margin: 1vw;
+    flex-basis: 0;
+    border-radius: 1vw;
+    overflow: hidden;
+}
+.prayer-schedule>.box .time {
+    font-size: 2.6em;
+    font-weight: bold;
+    padding: 1vw;
+}
+.prayer-schedule>.box.active {
+    background: rgb(255 255 255 /40%);
+    text-shadow: 0px 0px 3px rgb(0 0 0 / 70%);
+}
+.prayer-schedule>.box::before{
+    content: '';
+    display: block;
+    left:0;
+    top:0;
+    right:0;
+    height: 5vw;
+    background-image: url(../img/headerbg.svg);
+    background-repeat: no-repeat;
+    background-position: bottom center;
+    background-size: cover;
+    opacity: 0.2;
+    position: absolute;
+}
+.prayer-schedule>.box>.header {
+    padding: 1vw;
+    font-size: 1.4em;
+}
+.content .timer {
+    margin: 0vw 2vw;
+}
+.content .timer>.counter {
+    display: inline-block;
+    background: rgb(0 0 0/70%);
+    color: #fff;
+    padding: 1vw 2vw;
+    font-size: 2em;
+    border-radius: 1vw;
+    backdrop-filter: blur(11px);
+}
+.owl-carousel .item-video>video {
+    width: 100%;
+    object-fit: cover;
+}
+.page-background>video {
+    width: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+.page>.content.alt {
+    flex-direction: row;
+    align-items: stretch;
+}
+.page>.content.alt>.page-background {
+    position: relative;
+    left: auto;
+    top: auto;
+    right: auto;
+    bottom: auto;
+    width: 100%;
+}
+.page>.content.alt>.sidebar {
+    background: #000;
+    display: flex;
+    flex-direction: column;
+    width: 40vw;
+    position: relative;
+    z-index: 1;
+}
+.sidebar>.prayer-schedule {
+    display: flex;
+    padding: 0;
+    background: #272727;
+    flex-direction: column;
+    flex-grow: 1;
+}
+.sidebar>.prayer-schedule>.box>* {
+    display: inline-block;
+    vertical-align: middle;
+}
+.sidebar>.prayer-schedule>.box {
+    white-space: nowrap;
+    margin: 0;
+    display: flex;
+    border-radius: 0;
+    font-size: 2em;
+    padding: 0 1vw;
+    background: #272727;
+    align-content: center;
+    align-items: center;
+}
+.page>.content.alt>.sidebar>.timer {
+    margin: 0;
+    background: #000;
+}
+.page>.content.alt>.sidebar>.timer>.counter {
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+}
+.page>.content.alt>.sidebar>.timer>.counter>.countdown {
+    margin: 0;
+    margin-right: auto;
+}
+.page>.content.alt>.sidebar>.timer>.counter>* {
+    margin-left: 0.5vw;
+}
+.sidebar>.prayer-schedule .time {
+    font-size: 1em;
+}
+.sidebar>.prayer-schedule>.box .header {
+    animation: none;
+    margin-right: auto;
+    font-size: 1em;
+    font-family: Bahnschrift, Arial, Helvetica, sans-serif;
+}
+.sidebar>.prayer-schedule>.box::before {
+    display: none;
+}
+.sidebar>.prayer-schedule>.box.active {
+    background: #575757;
+}
+.page>.content.alt>.page-background>* {
+    object-fit: cover;
+    position: absolute;
+    left: -2px;
+    top: 0;
+    width:calc(100% + 4px);
+    height:100%;
+    box-sizing: border-box;
+    z-index: 1;
+}
+.page>.content.alt .owl-carousel .owl-stage-outer{
+    max-height:100%;
+}
+.page>.header.alt {
+    background: #393939;
+}
+.page>.header.alt>.banner {
+    background: #444444;
+}
+.page>.footer.alt {
+    background: #393939;
+}
+
+/* MARQUEE */
+@-moz-keyframes marquee {
+    0%   { -moz-transform: translateX(100%); }
+    100% { -moz-transform: translateX(-100%); }
+}
+@-webkit-keyframes marquee {
+    0%   { -webkit-transform: translateX(100%); }
+    100% { -webkit-transform: translateX(-100%); }
+}
+@keyframes marquee {
+    0%   { 
+        -moz-transform: translateX(100%); /* Firefox bug fix */
+        -webkit-transform: translateX(100%); /* Firefox bug fix */
+        transform: translateX(100%); 		
+    }
+    100% { 
+        -moz-transform: translateX(-100%); /* Firefox bug fix */
+        -webkit-transform: translateX(-100%); /* Firefox bug fix */
+        transform: translateX(-100%); 
+    }
+}

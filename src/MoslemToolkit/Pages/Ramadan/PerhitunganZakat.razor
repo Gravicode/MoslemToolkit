@@ -1,0 +1,338 @@
+﻿@page "/data-zakat"
+<h3>Data Zakat</h3>
+
+@using System.IO
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@using System.Linq
+@inject IToastService toastService
+
+@inject IJSRuntime jsRuntime
+<div id="canvas1" style="background-color:white;" class="container-fluid">
+
+    <div class="row">
+        <div class="col col-12">
+            <div class="form-group">
+                <label for="nama" class="col-sm-2 col-form-label">Tahun</label>
+                <div class="col-sm-11">
+                    <input type="number" @bind="Tahun" id="tahun">
+                </div>
+            </div>
+            <button @onclick="Refresh" class="btn btn-success">Refresh</button>
+        </div>
+
+    </div>
+    <hr />
+    <h3>Summary</h3>
+    <div class="row">
+        <table class="table">
+            <tr>
+                <td>Keterangan</td>
+                <td>Nilai</td>
+            </tr>
+            <tr>
+                <td>Tahun</td>
+                <td>@Tahun</td>
+            </tr>
+            <tr>
+                <td>Total Beras (sok)</td>
+                <td>@TotalBeras.ToString("n0")</td>
+            </tr>
+            <tr>
+                <td>Total Uang Titipan Zakat (Rp)</td>
+                <td>Rp. @TotalUang.ToString("n0")</td>
+            </tr>
+            <tr>
+                <td>Total dalam Sok</td>
+                <td>@TotalDalamBeras.ToString("n2") sok</td>
+            </tr>
+            <tr>
+                <td>Harga Beras</td>
+                <td>@HargaBeras.ToString("n0")</td>
+            </tr>
+
+        </table>
+    </div>
+    <hr />
+    <h3>Pembagian Zakat</h3>
+    <div class="row">
+        <div class="table-responsive">
+            <table class="table">
+                <tr>
+                    <td>Nama</td>
+                    <td>Persen</td>
+                    <td>Beras</td>
+                    <td>Uang</td>
+                    <td>Konversi Uang Ke Beras (Sok)</td>
+                    <td>Total Dalam Beras (Sok)</td>
+                    <td>Beras (Pembulatan)</td>
+                    <td>Uang (Pembulatan)</td>
+                </tr>
+                @if (Pembagian != null)
+                {
+                    @foreach (var item in Pembagian)
+                    {
+
+                        <tr>
+                            <td>@item.Nama</td>
+                            <td>@(item.Persen*100) %</td>
+                            <td>@item.Beras.ToString("n2") sok</td>
+                            <td>Rp. @item.Uang.ToString("n2")</td>
+                            <td>@item.KonversiUangKeBeras.ToString("n2") sok</td>
+                            <td>@item.TotalDalamBeras.ToString("n2") sok</td>
+                            <td>@item.BerasPembulatan.ToString("n0") sok</td>
+                            <td>Rp. @item.UangPembulatan.ToString("n0")</td>
+                        </tr>
+                    }
+                }
+            </table>
+        </div>
+    </div>
+    <hr />
+    <h3>Detail Asnab</h3>
+    <div class="row">
+        <div class="table-responsive">
+            <table class="table">
+                <tr>
+                    <td>Nama</td>
+                    <td>Persen</td>
+                    <td>Beras</td>
+                    <td>Uang</td>
+                    <td>Konversi Uang Ke Beras (Sok)</td>
+                    <td>Total Dalam Beras (Sok)</td>
+                    <td>Beras (Pembulatan)</td>
+                    <td>Uang (Pembulatan)</td>
+                </tr>
+                @if (DetailAsnab != null)
+                {
+                    @foreach (var item in DetailAsnab)
+                    {
+
+                        <tr>
+                            <td>@item.Nama</td>
+                            <td>@(item.Persen*100) %</td>
+                            <td>@item.Beras.ToString("n2") sok</td>
+                            <td>Rp. @item.Uang.ToString("n2")</td>
+                            <td>@item.KonversiUangKeBeras.ToString("n2") sok</td>
+                            <td>@item.TotalDalamBeras.ToString("n2") sok</td>
+                            <td>@item.BerasPembulatan.ToString("n0") sok</td>
+                            <td>Rp. @item.UangPembulatan.ToString("n0")</td>
+                        </tr>
+                    }
+                }
+            </table>
+        </div>
+    </div>
+    <hr />
+    <h3>Pembagian Khusus (Dalam Bentuk Uang)</h3>
+    <div class="row">
+        <div class="table-responsive">
+            <table class="table">
+                <tr>
+                    <td>Nama</td>
+                    <td>Beras (sok)</td>
+                    <td>Harga Jual Beras (Rp)/Sok</td>
+                    <td>Total Jual Beras (Rp)</td>
+                    <td>Uang</td>
+                    <td>Total Jual Beras + Uang</td>
+                </tr>
+                @if (Pembagian != null)
+                {
+                    SubTotal = 0;
+                    Total = 0;
+                    @foreach (var item in Pembagian)
+                    {
+                        @if (item.Nama != "Asnab" && item.Nama != "Kelompok")
+                        {
+                            SubTotal += (item.Beras * HargaJualBeras);
+                            Total += (item.Beras * HargaJualBeras) + item.Uang;
+                            <tr>
+                                <td>@item.Nama</td>
+                                <td>@item.Beras.ToString("n2") sok</td>
+                                <td><input type="number" @bind="HargaJualBeras"></td>
+                                <td>Rp. @((item.Beras * HargaJualBeras).ToString("n0"))</td>
+                                <td>Rp. @item.Uang.ToString("n0")</td>
+                                <td>Rp. @(((item.Beras * HargaJualBeras)+item.Uang).ToString("n0"))</td>
+                            </tr>
+                        }
+                    }
+                    <tr>
+                        <td colspan="3">Sub Total</td>
+                        <td><b>Rp. @SubTotal.ToString("n0")</b></td>
+                        <td>Total</td>
+                        <td><b>Rp. @Total.ToString("n0")</b></td>
+                    </tr>
+                }
+            </table>
+        </div>
+        <table class="table">
+            <tr>
+                <td>Keterangan</td>
+                <td>Nilai</td>
+            </tr>
+            @{
+                SisaUang = (TotalUang - Total);
+                SisaBeras = SisaUang / HargaBeras;
+                TotalBerasSelain_SB_DA_DS = 0;
+                foreach (var item in Pembagian)
+                {
+                    if (item.Nama == "Asnab" || item.Nama == "Kelompok")
+                    {
+                        TotalBerasSelain_SB_DA_DS += item.TotalDalamBeras;
+                    }
+
+                }
+            }
+            <tr>
+                <td>Sisa Uang (Total Uang - Penjualan Beras)</td>
+                <td>Rp. @(SisaUang.ToString("n0")) sok</td>
+            </tr>
+            <tr>
+                <td>Sisa Uang Dalam Beras (sok)</td>
+                <td>@(SisaBeras.ToString("n2")) sok</td>
+            </tr>
+            <tr>
+                <td>Total Beras (sok)</td>
+                <td>@((TotalBeras + SisaBeras).ToString("n2")) sok</td>
+            </tr>
+            <tr>
+                <td>Tambahan Beras Dari Hasil Penjualan</td>
+                <td>@((TotalBeras + SisaBeras-TotalBerasSelain_SB_DA_DS).ToString("n2")) sok</td>
+            </tr>
+
+        </table>
+    </div>
+    <h4>Muzaki Belum Setor Zakat:</h4>
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+            <tr>
+                <td>No</td>
+                <td>KK</td>
+                <td>Nama</td>
+                <td>Sudah Tercatat</td>
+                @*<td>Sudah Realisasi</td>*@
+            </tr>
+            @{
+                int counter = 1;
+            }
+            @foreach (var orang in MuzakiBelum)
+            {
+
+                <tr>
+                    <td>@(counter++)</td>
+                    <td>@orang.KK</td>
+                    <td>@orang.Nama</td>
+                    <td>@(orang.SudahTercatat?"Sudah":"Belum")</td>
+                    @*<td><input type="checkbox" @bind="@orang.SudahRealisasi" /></td>*@
+
+                </tr>
+            }
+        </table>
+    </div>
+    <button class="btn btn-warning mr-1 mb-1" @onclick="CaptureScreen">Download As Image</button>
+</div>
+
+@code {
+    int Tahun;
+    MoslemToolkit.Data.MuzakiService service;
+    MoslemToolkit.Data.MustahikService MustahikService;
+    MoslemToolkit.Data.HargaBerasZakatService HargaService;
+    List<Muzaki> DataMuzaki;
+    List<Mustahik> DataMustahik;
+    List<PembagianZakat> Pembagian;
+    List<PembagianZakat> DetailAsnab;
+    List<Muzaki> MuzakiBelum;
+    long HargaBeras, HargaJualBeras;
+    double TotalBeras;
+    double TotalDalamBeras;
+    double TotalUang;
+    double Total, SisaUang, SisaBeras, TotalBerasSelain_SB_DA_DS;
+    double SubTotal;
+    void Refresh()
+    {
+        RefreshData();
+
+        Kalkulasi();
+    }
+    void Kalkulasi()
+    {
+        HargaBeras = HargaService.GetHargaBeras(Tahun);
+        HargaJualBeras = HargaBeras;
+        if (DataMuzaki != null)
+        {
+            TotalBeras = DataMuzaki.Where(x => x.Tahun == Tahun && x.ZakatBeras > 0).Sum(x => x.ZakatBeras);
+            TotalUang = DataMuzaki.Where(x => x.Tahun == Tahun && x.TitipZakat > 0).Sum(x => x.TitipZakat);
+            TotalDalamBeras = TotalBeras + (TotalUang / HargaBeras);
+            //hitung tabel pembagian
+            Pembagian = new List<PembagianZakat>();
+
+            AppConstants.PembagianDefault.ForEach(x =>
+            {
+                var berasPerItem = x.Persen * TotalBeras;
+                var uangPerItem = x.Persen * TotalUang;
+                var konversiBeras = uangPerItem / HargaBeras;
+                var TotalBerasPerItem = berasPerItem + konversiBeras;
+                var BerasPembulatanItem = Math.Floor(TotalBerasPerItem);
+                var UangPembulatanItem = (TotalBerasPerItem - BerasPembulatanItem) * HargaBeras;
+                Pembagian.Add(new PembagianZakat()
+                    {
+                        Nama = x.Nama,
+                        Persen = x.Persen,
+                        Beras = berasPerItem,
+                        Uang = uangPerItem,
+                        KonversiUangKeBeras = konversiBeras,
+                        TotalDalamBeras = TotalBerasPerItem,
+                        BerasPembulatan = BerasPembulatanItem,
+                        UangPembulatan = UangPembulatanItem
+                    });
+            });
+            DetailAsnab = new List<PembagianZakat>();
+            var PctAsnab = AppConstants.PembagianDefault.Where(x => x.IsAsnab).FirstOrDefault().Persen;
+            var TotalPengaliAsnab = DataMustahik.Sum(x => (x.Jumlah * AppConstants.AsnabDefault[x.TipeAsnab].FaktorPengali));
+            DataMustahik.ForEach(x =>
+            {
+                var pct = ((AppConstants.AsnabDefault[x.TipeAsnab].FaktorPengali * x.Jumlah) / TotalPengaliAsnab) * PctAsnab;
+                var berasPerItem = pct * TotalBeras;
+                var uangPerItem = pct * TotalUang;
+                var konversiBeras = uangPerItem / HargaBeras;
+                var TotalBerasPerItem = berasPerItem + konversiBeras;
+                var BerasPembulatanItem = Math.Floor(TotalBerasPerItem);
+                var UangPembulatanItem = (TotalBerasPerItem - BerasPembulatanItem) * HargaBeras;
+                DetailAsnab.Add(new PembagianZakat()
+                    {
+                        Nama = x.Nama,
+                        Persen = pct,
+                        Beras = berasPerItem,
+                        Uang = uangPerItem,
+                        KonversiUangKeBeras = konversiBeras,
+                        TotalDalamBeras = TotalBerasPerItem,
+                        BerasPembulatan = BerasPembulatanItem,
+                        UangPembulatan = UangPembulatanItem
+                    });
+            });
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new MuzakiService();
+        if (MustahikService == null) MustahikService = new MustahikService();
+        if (HargaService == null) HargaService = new HargaBerasZakatService();
+        Tahun = DateTime.Now.Year;
+        RefreshData();
+
+        Kalkulasi();
+    }
+
+    void RefreshData()
+    {
+        DataMuzaki = service.GetAllData(Tahun);
+        DataMustahik = MustahikService.GetAllData(Tahun);
+        MuzakiBelum = service.GetMuzakiBelumSetor(Tahun).OrderBy(x => x.KK).ThenBy(x => x.Nama).ToList();
+    }
+    async Task CaptureScreen()
+    {
+        await jsRuntime.InvokeAsync<object>("HtmlToImage", new[] { "canvas1" });
+    }
+
+}

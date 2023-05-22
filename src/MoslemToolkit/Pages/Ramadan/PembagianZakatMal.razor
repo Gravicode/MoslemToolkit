@@ -1,0 +1,114 @@
+﻿@page "/pembagian-zakat-mal"
+<h3>Kalkulator Pembagi Zakat Mal</h3>
+
+@using System.IO
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@using System.Linq
+@inject IToastService toastService
+
+@inject IJSRuntime jsRuntime
+
+    <div class="row">
+        <div class="col col-12">
+            <div class="form-group">
+                <label for="tahun" class="col-sm-2 col-form-label">Tahun</label>
+                <div class="col-sm-11">
+                    <input type="number" @bind="Tahun" id="tahun">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="JmlAmil" class="col-sm-2 col-form-label">Jumlah Amil</label>
+                <div class="col-sm-11">
+                    <input type="number" @bind="JumlahAmil" id="JmlAmil">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="TotalAsnab" class="col-sm-2 col-form-label">Alokasi Dana Untuk Asnab</label>
+                <div class="col-sm-11">
+                    <input type="number" @bind="TotalAsnab" id="TotalAsnab">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="TotalAmil" class="col-sm-2 col-form-label">Alokasi Dana Untuk Amil</label>
+                <div class="col-sm-11">
+                    <input type="number" @bind="TotalAmil" id="TotalAmil">
+                </div>
+            </div>
+            <button @onclick="Refresh" class="btn btn-success">Hitung</button>
+        </div>
+
+    </div>
+    <hr />
+     <h3>Pembagian untuk Asnab</h3>
+    <div class="row">
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <tr>
+                    <td>Penerima</td>
+                    <td>Nama</td>
+                    <td>Persen</td>
+                    <td>Uang</td>
+
+                </tr>
+                @if (Pembagian != null)
+                {
+                    @foreach (var item in Pembagian)
+                    {
+
+                        <tr>
+                            <td>@item.Jenis</td>
+                            <td>@item.Nama</td>
+                            <td>@((item.Persen*100).ToString("n2")) %</td>
+                            <td>Rp. @item.Uang.ToString("n2")</td>
+
+                        </tr>
+                    }
+                    <tr>
+                        <td colspan="2"><b>Total</b></td>
+                        <td><b>@((Pembagian.Sum(x=>x.Persen)*100).ToString("n2")) %</b></td>
+                        <td><b>Rp. @(Pembagian.Sum(x=>x.Uang).ToString("n2"))</b></td>
+
+                    </tr>
+                }
+            </table>
+        </div>
+    </div>
+
+   <hr />
+     <h3>Pembagian untuk Amil</h3>
+    <div class="row">
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <tr>
+                    <td>No</td>
+                    <td>Nama</td>
+                    <td>Persen</td>
+                    <td>Uang</td>
+
+                </tr>
+                @if (DataAmil != null)
+                {
+                    @foreach (var item in DataAmil)
+                    {
+
+                        <tr>
+                            <td>@item.No</td>
+                            <td><input type="text" @bind="item.Nama"></td>
+                            <td><input type="number" @bind="item.Persen"> %</td>
+                            <td><input type="number" @bind="item.Total"> IDR</td>
+
+                        </tr>
+                    }
+                    <tr>
+                        <td colspan="2"><b>Total</b></td>
+                        <td><b>@((DataAmil.Sum(x=>x.Persen)*100).ToString("n2")) %</b></td>
+                        <td><b>Rp. @(DataAmil.Sum(x=>x.Total).ToString("n2"))</b></td>
+
+                    </tr>
+                }
+            </table>
+        </div>
+    </div>
+
+

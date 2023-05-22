@@ -1,0 +1,170 @@
+﻿@page "/master/HargaBerasZakat"
+@inject IJSRuntime jsRuntime
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject NavigationManager NavMgr
+@*@namespace MoslemToolkit.Pages.Master*@
+@inject IToastService toastService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@using System.IO
+<h1>Daftar Harga Beras Zakat</h1>
+
+<p>Gunakan halaman ini untuk menyimpan daftar Harga Beras Zakat</p>
+
+@if (DataHargaBerasZakat == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <body onbeforeunload="TestDataTablesRemove('#gridData')">
+        <div class="table-responsive">
+            <table id="gridData" name="gridData" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Tahun</th>
+                        <th>Harga Beras Zakat</th>
+
+                        <th>Actions</th>
+                    </tr>
+
+                </thead>
+                <tbody>
+                    @foreach (var item in DataHargaBerasZakat)
+                    {
+                    <tr>
+                        <td>@item.Tahun</td>
+                        <td>Rp. @item.HargaJualBeras.ToString("n2")</td>
+
+                        <td>
+                                @if (HasLogin)
+                                {
+                                    <input type="button" class="btn btn-primary btn-sm mt-1" @onclick="(() => PrepareForEdit(item))" data-toggle="modal" data-target="#taskModal" value="Ubah" />
+                                    <input type="button" class="btn btn-danger btn-sm mt-1" @onclick="(() => PrepareForDelete(item))" data-toggle="modal" data-target="#confirmDeleteModal" value="Hapus" />
+                                }
+                                else
+                                {
+                                    <p>-</p>
+                                }
+
+                        </td>
+
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </body>
+}
+@if (HasLogin)
+{
+    <div>
+        <input type="button" data-toggle="modal" data-target="#taskModal" class="btn btn-primary" value="Tambah Harga Beras Zakat" @onclick="(() => InitializeitemObject())" />
+    </div>
+}
+<ConfirmDialog OnClick="@Delete" />
+<HargaBerasZakatDetail @ref="detail" TaskObject=@itemObject DataChanged="@DataChanged">
+    <CustomHeader>@customHeader</CustomHeader>
+</HargaBerasZakatDetail>
+
+@code {
+    bool HasLogin;
+    HargaBerasZakatDetail detail;
+    MoslemToolkit.Data.HargaBerasZakatService service;
+    string customHeader = string.Empty;
+    List<HargaBerasZakat> DataHargaBerasZakat;
+    HargaBerasZakat itemObject = new HargaBerasZakat();
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    string UserName;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new HargaBerasZakatService();
+
+        DataHargaBerasZakat = service.GetAllData();
+
+
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (DataHargaBerasZakat != null && DataHargaBerasZakat.Count > 0)
+        {
+
+            await jsRuntime.InvokeAsync<object>("TestDataTablesAdd", "#gridData");
+        }
+        if (firstRender)
+        {
+            if (string.IsNullOrEmpty(UserName))
+            {
+                try
+                {
+                    UserName = await localStorage.GetItemAsync<string>(AppConstants.NameKey);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+                if (string.IsNullOrEmpty(UserName))
+                {
+                    NavMgr.NavigateTo($"/login");
+                }
+                else
+                {
+
+                }
+            }
+            {
+                HasLogin = RoleInfo.HasRole(UserName,Roles.Pengurus) || RoleInfo.HasRole(UserName,Roles.PJKBM);
+                if(HasLogin)
+                    StateHasChanged();
+            }
+        }
+    }
+
+    private void InitializeitemObject()
+    {
+
+        itemObject = new HargaBerasZakat();
+        itemObject.Tahun = DateHelper.GetLocalTimeNow().Year;
+        itemObject.HargaJualBeras =  0;     
+
+
+
+        //itemObject.Id = -1;
+
+        customHeader = "Tambah Harga Beras Zakat";
+    }
+    private async void DataChanged()
+    {
+        DataHargaBerasZakat = service.GetAllData();
+        StateHasChanged();
+    }
+
+    private void PrepareForEdit(HargaBerasZakat item)
+    {
+        customHeader = "Ubah Harga Beras Zakat";
+        itemObject = item;
+
+    }
+    private void PrepareForDelete(HargaBerasZakat item)
+    {
+        itemObject = item;
+    }
+    
+    private async Task Delete()
+    {
+        var task = service.DeleteData(itemObject.Tahun);
+        await jsRuntime.InvokeAsync<object>("CloseModal", "confirmDeleteModal");
+        DataHargaBerasZakat = service.GetAllData();
+        itemObject = new HargaBerasZakat() { Tahun = 0 };
+    }
+
+    private async System.Threading.Tasks.Task applyPager(string TableName)
+    {
+        await jsRuntime.InvokeAsync<object>("applyPager", TableName);
+    }
+
+}

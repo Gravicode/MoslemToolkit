@@ -1,0 +1,217 @@
+﻿@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@using System.Linq
+@inject IJSRuntime jsRuntime
+@*@namespace MoslemToolkit.Pages.Master*@
+@using System.IO
+@inject IToastService toastService
+
+<div class="modal" tabindex="-1" role="dialog" id="taskModal">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@CustomHeader</h5>
+
+
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@TaskObject" OnValidSubmit="@HandleValidSubmit">
+                    <DataAnnotationsValidator />
+                    <div class="form-group">
+                        <label for="tgl">Tanggal</label>
+                        <InputDate id="tgl" class="form-control" @bind-Value="@TaskObject.Tanggal" />
+                        <ValidationMessage For="@(() => TaskObject.Tanggal)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="ket">Keterangan</label>
+                        <input type="hidden" @bind-value="@TaskObject.Id" />
+                        <InputText id="ket" class="form-control" @bind-Value="@TaskObject.Keterangan" />
+                        <ValidationMessage For="@(() => TaskObject.Keterangan)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="penyetor">Penyetor</label>
+                        <select  @bind="TaskObject.JamaahId" id="penyetor">
+                            <option value="-1">Pilih</option>
+                            @foreach (Jamaah item in DataJamaah)
+                            {
+                                <option value="@item.Id">@item.Nama</option>
+
+                            }
+                        </select>
+                        <ValidationMessage For="@(() => TaskObject.JamaahId)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="diterimaoleh">Diterima Oleh</label>
+                        <InputTextArea id="diterimaoleh" class="form-control" @bind-Value="@TaskObject.DiterimaOleh" />
+                        <ValidationMessage For="@(() => TaskObject.DiterimaOleh)" />
+                    </div>
+                    @{
+                        Hitung();
+                    }
+                    <div class="form-group">
+                        <label for="total">Total (Rp)</label>
+                        <input readonly id="total" class="form-control" @bind="@TaskObject.Total" />
+                        <ValidationMessage For="@(() => TaskObject.Total)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="total">Dana di Setor (Rp)</label>
+                        <InputNumber id="total" class="form-control" @bind-Value="@TotalDistribusi" />
+                        <button type="button" @onclick="Distribusi" class="btn btn-primary mt-1">Distribusi Otomatis</button>
+                    </div>
+                     @if (DataIsrun != null)
+                {
+                    <div class="table-responsive" style="overflow-y:auto;">
+                        <table id="gridData2" name="gridData" class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>No</th>
+                                    <th>Lingkup</th>
+                                    <th>Nama</th>
+                                    <th>Persen dari Setoran</th>
+                                    <th>Penjelasan</th>
+                                    <th>Jumlah</th>
+                                    <th>Keterangan</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in DataIsrun)
+                                {
+                                    <tr>
+                                                                                
+                                        <td>@item.No</td>
+                                        <td>@item.AkunInfaqSodakoh.Level</td>
+                                        <td>@item.AkunInfaqSodakoh.Uraian</td>
+                                        <td>@item.AkunInfaqSodakoh.PersenDariSetoran %</td>
+                                        <td>@item.AkunInfaqSodakoh.Keterangan</td>
+                                        <td><input type="number" @bind="@item.Jumlah" /></td>                                       
+                                        <td><input type="text" @bind="@item.Keterangan" /></td>
+                                    
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                    <button type="submit" class="btn btn-primary btn-sm mt-1">Simpan</button>
+                    <button type="button" class="btn btn-secondary btn-sm mt-1" data-dismiss="modal">Cancel</button>
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    [Parameter]
+    public RenderFragment CustomHeader { get; set; }
+    [Parameter]
+    public HeaderPenerimaanInfaqSodakoh TaskObject { get; set; }
+    [Parameter]
+    public Action DataChanged { get; set; }
+    public List<Jamaah> DataJamaah { set; get; }
+    [Parameter]
+    public List<PenerimaanInfaqSodakoh> DataIsrun { set; get; }
+    MoslemToolkit.Data.HeaderPenerimaanInfaqSodakohService service;
+    MoslemToolkit.Data.PenerimaanInfaqSodakohService Penerimaanservice;
+    MoslemToolkit.Data.JamaahService JMservice;
+    double TotalDistribusi;
+     
+    async Task Distribusi()
+    {
+        if (TotalDistribusi > 0)
+        {
+            var totalPct = 0.0;
+            for(var i = 0; i < DataIsrun.Count; i++)
+            {
+                var item = DataIsrun[i];
+                var persen = item.AkunInfaqSodakoh==null ? 0.0 : item.AkunInfaqSodakoh.PersenDariSetoran/100;
+                item.Jumlah = TotalDistribusi * persen;
+                totalPct += persen;
+            }
+            if (totalPct > 1.0)
+            {
+                toastService.ShowError("jumlah presentase distribusi melebihi 100%, bisa di cek ulang data akunnya");
+            }
+        }
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new HeaderPenerimaanInfaqSodakohService();
+        if (Penerimaanservice == null) Penerimaanservice = new PenerimaanInfaqSodakohService();
+        if (JMservice == null) JMservice = new JamaahService();
+        DataJamaah = JMservice.GetAllData();
+    }
+   
+
+    void Hitung(){
+
+        TaskObject.Total = DataIsrun==null ? 0 : DataIsrun.Sum(x=>x.Jumlah);
+    }
+
+    public void Refresh(long fid){
+        if (fid == 0)
+        {
+            DataIsrun = Penerimaanservice.GetDataIsrun();
+        }else{
+            DataIsrun = Penerimaanservice.GetDataIsrun(fid);
+        }
+    }
+    private async void HandleValidSubmit()
+    {
+
+        Hitung();
+        if (TaskObject.Id == 0)
+        {
+            if (TaskObject.JamaahId > 0)
+            {
+                var nama = JMservice.GetDataById(TaskObject.JamaahId).Nama;
+                TaskObject.Penyetor = nama;
+            }
+            service.InsertData(TaskObject);
+            
+            for(int i=0;i<DataIsrun.Count;i++){
+                var item = DataIsrun[i];
+                item.HeaderPenerimaanInfaqSodakohId = TaskObject.Id;
+                item.JamaahId = TaskObject.JamaahId;
+                //item.NamaAkun = item.AkunInfaqSodakoh.Uraian;
+                item.NamaJamaah = TaskObject.Penyetor;
+                item.Tanggal = TaskObject.Tanggal;
+                
+            }
+            Penerimaanservice.InsertData(DataIsrun);
+        }
+        else
+        {
+            if (TaskObject.JamaahId > 0)
+            {
+                var nama = JMservice.GetDataById(TaskObject.JamaahId).Nama;
+                TaskObject.Penyetor = nama;
+            }
+    
+            service.UpdateData(TaskObject);
+            for(int i=0;i<DataIsrun.Count;i++){
+                var item = DataIsrun[i];
+                item.JamaahId = TaskObject.JamaahId;
+                item.NamaJamaah = TaskObject.Penyetor;
+                item.Tanggal = TaskObject.Tanggal;                
+            }
+            Penerimaanservice.UpdateData(DataIsrun);
+        }
+
+        await CloseTaskModal();
+        DataChanged?.Invoke();
+    }
+
+
+
+    private async Task CloseTaskModal()
+    {
+        await jsRuntime.InvokeAsync<object>("CloseModal", "taskModal");
+    }
+
+
+}

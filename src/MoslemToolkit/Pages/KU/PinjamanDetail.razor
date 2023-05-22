@@ -1,0 +1,127 @@
+﻿@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject IJSRuntime jsRuntime
+@*@namespace MoslemToolkit.Pages.Master*@
+@using System.IO
+@inject IToastService toastService
+
+<div class="modal" tabindex="-1" role="dialog" id="taskModal">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@CustomHeader</h5>
+
+
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@TaskObject" OnValidSubmit="@HandleValidSubmit">
+                    <DataAnnotationsValidator />
+
+                    <div class="form-group">
+                        <label for="no">Tanggal Pinjam</label>
+                        <input type="hidden" @bind-value="@TaskObject.Id" />
+                        <InputDate id="tanggal" class="form-control" @bind-Value="@TaskObject.TanggalPinjam" />
+                        <ValidationMessage For="@(() => TaskObject.TanggalPinjam)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="Pinjaman">Nama Pinjaman</label>
+                        <InputText id="Pinjaman" class="form-control" @bind-Value="@TaskObject.Nama" />
+                        <ValidationMessage For="@(() => TaskObject.Nama)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="ket">Keterangan</label>
+                        <InputTextArea id="ket" class="form-control" @bind-Value="@TaskObject.Keterangan" />
+                        <ValidationMessage For="@(() => TaskObject.Keterangan)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="tgl-kembali">Tanggal Pengembalian</label>
+                        <InputDate id="tgl-kembali" class="form-control" @bind-Value="@TaskObject.TanggalPengembalian" />
+                        <ValidationMessage For="@(() => TaskObject.TanggalPengembalian)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="jumlah">Jumlah Pinjaman</label>
+                        <InputNumber id="jumlah" class="form-control" @bind-Value="@TaskObject.JumlahPinjaman" />
+                        <ValidationMessage For="@(() => TaskObject.JumlahPinjaman)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="status">Tipe</label>
+                        <select @bind="@TaskObject.Tipe" id="tipe">
+                            <option value="-">Pilih</option>
+                            @foreach (TipePinjaman item in Enum.GetValues(typeof(TipePinjaman)))
+                            {
+                                <option value="@item">@item.ToString()</option>
+
+                            }
+                        </select>
+                        <ValidationMessage For="@(() => TaskObject.Tipe)" />
+                    </div>
+
+
+                    <button type="submit" class="btn btn-primary btn-sm mt-1">Simpan</button>
+                    <button type="button" class="btn btn-secondary btn-sm mt-1" data-dismiss="modal">Cancel</button>
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    public string FileUrl { get; set; }
+    [Parameter]
+    public RenderFragment CustomHeader { get; set; }
+    [Parameter]
+    public Pinjaman TaskObject { get; set; }
+    [Parameter]
+    public Action DataChanged { get; set; }
+    MoslemToolkit.Data.PinjamanService service;
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new PinjamanService();
+
+    }
+    private async void HandleValidSubmit()
+    {
+        var diff = TaskObject.TanggalPengembalian - TaskObject.TanggalPinjam;
+        if (TaskObject.TanggalPengembalian <= TaskObject.TanggalPinjam)
+        {
+            toastService.ShowError("Tanggal pengembalian harus lebih besar");
+            return;
+        }
+
+        if (TaskObject.JumlahPinjaman <= 0)
+        {
+            toastService.ShowError("Jumlah pinjaman tidak valid");
+            return;
+        }
+
+        TaskObject.JangkaWaktuHari = Convert.ToInt32(diff.TotalDays);
+
+        if (TaskObject.Id == 0)
+        {
+
+            service.InsertData(TaskObject);
+
+        }
+        else
+        {
+            service.UpdateData(TaskObject);
+        }
+
+        await CloseTaskModal();
+        DataChanged?.Invoke();
+    }
+
+
+
+    private async Task CloseTaskModal()
+    {
+        await jsRuntime.InvokeAsync<object>("CloseModal", "taskModal");
+    }
+
+
+}

@@ -1,0 +1,37 @@
+{
+  "ConnectionStrings": {
+    "SqlConn": "Database=ngajidb; Data Source=silpodb.mysql.database.azure.com; User Id=BalittanahAdmin@silpodb; Password=Balit123qweasd!"
+  },
+  "App": {
+    "Delay": 1000,
+    "ApiUrl": "https://cimanggu.my.id/api/cctv/sendimage",
+    //"https://cimanggu-online.azurewebsites.net/api/cctv/sendimage",
+
+    "CCTVUrls": "http://admin:cctv1234@192.168.1.15/ISAPI/Streaming/channels/101/picture;http://admin:cctv1234@192.168.1.15/ISAPI/Streaming/channels/201/picture"
+    //"https://www.jll.co.id/images/apac/australia/articles/Walkability-article-800x450.jpg;https://www.jll.co.id/images/apac/australia/articles/Walkability-article-800x450.jpg"
+    //
+    //
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft": "Warning",
+      "Microsoft.Hosting.Lifetime": "Information"
+    }
+  },
+  "AllowedHosts": "*",
+  "MailSettings": {
+    "MailUser": "mifmasterz@outlook.com",
+    "MailPassword": "123qweasd",
+    "MailServer": "smtp.outlook.com",
+
+    "SendGridKey": "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",
+    "TemplatePath": "wwwroot\\template\\email.html",
+    "MailPort": 587
+  },
+  "SmsSettings": {
+    "ZenzivaUserKey": "syawhe",
+    "ZenzivaPassKey": "99tzmncvrz",
+    "TokenKey": "9ddb7dc788dc2e31ad12ddeafa56f8fe"
+  }
+}

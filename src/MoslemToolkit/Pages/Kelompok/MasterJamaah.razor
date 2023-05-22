@@ -1,0 +1,260 @@
+﻿@page "/master/Jamaah"
+
+@inject IJSRuntime jsRuntime
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject NavigationManager NavMgr
+@*@namespace MoslemToolkit.Pages.Master*@
+@inject IToastService toastService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+
+@using System.IO
+<h1>Data Jamaah Kelompok</h1>
+
+<p>Gunakan halaman ini untuk menyimpan data jamaah kelompok.</p>
+  <div class="row">
+        <div class="col col-12">
+            <div class="form-group">
+                <label for="nim">Upload Data Jamaah</label>
+                <b><a href="/template/JamaahTemplate.xlsx">Download template data jamaah</a></b>
+                <div class="alert alert-warning"> pilih dokumen lalu tunggu sampai dokumen selesai di upload.</div>
+                <BlazorInputFile.InputFile OnChange="HandleFileSelected" />
+            </div>
+        </div>
+
+    </div>
+      <div class="row">
+        <div class="col col-12">
+            <div class="form-group">
+                <label for="export">Export Data Jamaah</label>
+                <div class="alert alert-success"> data akan di export dalam bentuk excel file.</div>
+               <button class="btn btn-success mt-1 mb-1" @onclick="Export">Export</button>
+
+            </div>
+        </div>
+
+    </div>
+
+@if (DataJamaah == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <body onbeforeunload="TestDataTablesRemove('#gridData')">
+        <div class="table-responsive">
+            <table id="gridData" name="gridData" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>No. KK</th>
+                        <th>Nama</th>
+                        <th>Kelamin</th>
+                        <th>Status</th>
+                        <th>Tanggal Lahir</th>
+                        <th>Telepon</th>
+                        <th>Alamat</th>
+                        <th>Pendidikan</th>
+                        <th>Pekerjaan</th>
+                        <th>Menikah</th>
+                        <th>Foto</th>
+
+                        <th>Actions</th>
+                    </tr>
+
+                </thead>
+                <tbody>
+                    @foreach (var item in DataJamaah)
+                    {
+                    <tr>
+                        <td>@item.KK</td>
+                        <td>@item.Nama</td>
+                        <td>@item.Kelamin</td>
+                        <td>@item.Posisi.ToString()</td>
+                        <td>
+
+                            @item.TanggalLahir?.ToString("dd/MMM/yyyy")
+
+                        </td>
+                        <td>@item?.Telepon</td>
+                        <td>@item?.Alamat</td>
+                        <td>@item?.Pendidikan</td>
+                        <td>@item?.Pekerjaan</td>
+                        <td>@item.Status.ToString()</td>
+                        <td>
+                            @if (string.IsNullOrEmpty(item.PhotoUrl))
+                            {
+                                <p>Tidak ada foto</p>
+                            }
+                            else
+                            {
+                                <img style="width: 150px; height: 150px;object-fit: cover;" src="@item?.PhotoUrl?" alt="foto" />
+
+                            }
+                        </td>
+                        <td>
+
+                            @if (true)
+                            {
+                                <input type="button" class="btn btn-primary" @onclick="(() => PrepareForEdit(item))" data-toggle="modal" data-target="#taskModal" value="Ubah" />
+                                <input type="button" class="btn btn-danger" @onclick="(() => PrepareForDelete(item))" data-toggle="modal" data-target="#confirmDeleteModal" value="Hapus" />
+                            }
+                        </td>
+
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </body>
+}
+    <div>
+        <input type="button" data-toggle="modal" data-target="#taskModal" class="btn btn-primary" value="Tambah Jamaah" @onclick="(() => InitializeitemObject())" />
+    </div>
+
+<ConfirmDialog OnClick="@Delete" />
+<JamaahDetail @ref="detail" TaskObject=@itemObject DataChanged="@DataChanged">
+    <CustomHeader>@customHeader</CustomHeader>
+</JamaahDetail>
+
+@code {
+    bool HasLogin = false;
+    JamaahDetail detail;
+    MoslemToolkit.Data.JamaahService service;
+    string customHeader = string.Empty;
+    List<Jamaah> DataJamaah;
+    Jamaah itemObject = new Jamaah();
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    string UserName;
+
+    async Task HandleFileSelected(IFileListEntry[] files)
+    {
+        var file = files.FirstOrDefault();
+        if (file != null)
+        {
+            // Just load into .NET memory to show it can be done
+            // Alternatively it could be saved to disk, or parsed in memory, or similar
+
+            var ms = new MemoryStream();
+            await file.Data.CopyToAsync(ms);
+            //var bytes = ImageHelper.FixedSize(ms, 300, 300, false);
+            //string newName = $"dokumen_{DateTime.Now.ToString("dd_MM_yyyy")}_{Path.GetFileNameWithoutExtension(file.Name)}{Path.GetExtension(file.Name)}";
+            var bytes = ms.ToArray();
+            ms.Dispose();
+            var tempFile = Path.GetTempFileName() + ".xlsx";
+
+            File.WriteAllBytes(tempFile, bytes);
+
+            var data = JamaahService.ReadExcel(tempFile);
+            if (data == null)
+                toastService.ShowError("Ada kesalahan pada data");
+            else
+            {
+                var hasil = service.ImportData(data);
+                if (hasil)
+                {
+                    toastService.ShowSuccess("Data berhasil di import");
+                }
+                else
+                {
+                    toastService.ShowError("Gagal import data");
+                }
+            }
+            StateHasChanged();
+            }
+        }
+
+    async Task Export()
+    {
+        try{
+        var bytes = service.ExportToExcel();
+        await FileUtil.SaveAs(jsRuntime, "Jamaah.xlsx", bytes);
+        }catch(Exception ex){
+            toastService.ShowError(ex.Message);
+        }
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new JamaahService();
+
+        DataJamaah = service.GetAllData();
+
+
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (DataJamaah != null && DataJamaah.Count > 0)
+        {
+
+            await jsRuntime.InvokeAsync<object>("TestDataTablesAdd", "#gridData");
+        }
+        if (firstRender)
+        {
+            if (string.IsNullOrEmpty(UserName))
+            {
+                try
+                {
+                    UserName = await localStorage.GetItemAsync<string>(AppConstants.NameKey);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+                if (string.IsNullOrEmpty(UserName))
+                {
+                    NavMgr.NavigateTo($"/login");
+                }
+                else if (!string.IsNullOrEmpty(UserName) && UserName == AppConstants.USER_ADMIN)
+                {
+                    HasLogin = true;
+                    StateHasChanged();
+                }
+            }
+        }
+    }
+
+    private void InitializeitemObject()
+    {
+
+        itemObject = new Jamaah();
+        itemObject.CreatedBy = UserName;
+
+
+        //detail.DocumentUrl = "";
+
+        //itemObject.Id = -1;
+
+        customHeader = "Tambah Jamaah";
+    }
+    private async void DataChanged()
+    {
+        DataJamaah = service.GetAllData();
+        StateHasChanged();
+    }
+
+    private void PrepareForEdit(Jamaah item)
+    {
+        customHeader = "Ubah Data Jamaah";
+        itemObject = item;
+        //detail.DocumentUrl = item.DocumentUrl;
+    }
+    private void PrepareForDelete(Jamaah item)
+    {
+        itemObject = item;
+    }
+    private async Task Delete()
+    {
+        var task = service.DeleteData(itemObject.Id);
+        await jsRuntime.InvokeAsync<object>("CloseModal", "confirmDeleteModal");
+        DataJamaah = service.GetAllData();
+        itemObject = new Jamaah() { Id = -1 };
+    }
+
+    private async System.Threading.Tasks.Task applyPager(string TableName)
+    {
+        await jsRuntime.InvokeAsync<object>("applyPager", TableName);
+    }
+
+}

@@ -1,0 +1,360 @@
+﻿@using MoslemToolkit.Models
+@layout NoAuthLayout
+@inject IToastService toastService
+@using System.IO
+@inject AzureBlobHelper blob;
+@using MoslemToolkit.Helpers
+@inject NgajiService serviceNgaji
+@inject NavigationManager NavMgr
+@inject AbsensiService service
+@inject IJSRuntime JSRuntime
+
+
+
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+@inject MoslemToolkit.Data.AbsensiService absenService
+@inject MoslemToolkit.Data.FaceService faceService
+@page "/absensi-offline2"
+@using Microsoft.Azure.CognitiveServices.Vision.Face.Models
+
+<h3>Absensi Offline</h3>
+<p>Gunakan halaman ini untuk mengisi daftar hadir kegiatan secara offline, ambil foto lalu pilih simpan.</p>
+<div class="row">
+    <div class="col-12">
+        <div class="card mb-2">
+            <div class="card-header">
+                Daftar Kehadiran (Khusus Offline)
+            </div>
+            <div class="card-body">
+                <div>
+                    <div class="form-group">
+                        <label for="to">Tanggal Kegiatan</label>
+                        <input @bind="Tanggal" type="datetime-local" />
+                    </div>
+                    <div class="form-group">
+                        <label for="jenis-kelamin">Acara</label>
+                        @if (ListAcara != null)
+                        {
+                            <select id="acara" class="form-control"
+                                @bind="AcaraId">
+                                <option value="-1">Pilih</option>
+                                @for (int i = 0; i < ListAcara.Count; i++)
+                                {
+                                    <option value="@ListAcara[i].Id">
+                                        @ListAcara[i].Nama
+                                    </option>
+                                }
+                            </select>
+                        }
+                    </div>
+                    <div class="form-group">
+                        <label for="cari">Cari jamaah</label>
+                        <BlazoredTypeahead SearchMethod="SearchNama"
+                                           @bind-Value="@SelJamaah"
+                                           Placeholder="cari berdasarkan nama...">
+                            <SelectedTemplate Context="orang">
+                                @orang.Nama
+                            </SelectedTemplate>
+                            <ResultTemplate Context="orang">
+                                @orang.Nama
+                            </ResultTemplate>
+                        </BlazoredTypeahead>
+                    </div>
+
+                </div>
+
+                <div class="row">
+                    <div class="col-6">
+                        <canvas id="@options.CanvasID"
+                                style="background-color:lightgray;"
+                                width="@options.Width"
+                                height="@HeightPic">
+                        </canvas>
+                    </div>
+                    <div class="col-6">
+                        <img id="@ImageId" />
+                    </div>
+
+                    <div>
+                        <button class="btn btn-success mt-1" @onclick="Start">Mulai Camera</button>
+                        <button class="btn btn-info mt-1" @onclick="Capture">Ambil Foto</button>
+                        <button class="btn btn-primary mt-1" @onclick="Simpan">Simpan</button>
+                        <button class="btn btn-info mt-1" @onclick="ReloadData">Refresh</button>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        @if (DataAbsensi == null)
+        {
+            <p><em>Tidak ada data...</em></p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table style="background-color:white;" class="table table-striped w-auto">
+                    <thead>
+                        <tr>
+                            <th>Nama</th>
+                            <th>Jam Masuk</th>
+                            <th>Jumlah Orang</th>
+
+                            <th>Foto</th>
+                            <th>Kehadiran</th>
+                            <th>Actions</th>
+                        </tr>
+
+                    </thead>
+                    <tbody>
+                        @foreach (var item in DataAbsensi)
+                        {
+                            <tr>
+                                <td>@item.Nama</td>
+                                <td>@item.Tanggal.ToString("dd/MMM/yyyy HH:mm")</td>
+                                <td>@item.JumlahOrang.ToString("n0")</td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(item.PhotoUrl))
+                                    {
+
+                                        var embed = GetImageAsBase64Url(item.PhotoUrl);
+                                        //var strHtml = $"<img src='{embed}' width='100' alt='foto'/>";
+
+                                        <img src='@embed' width='100' alt='foto' />
+                                    }
+                                    else
+                                    {
+                                        <p>tidak ada</p>
+                                    }
+                                </td>
+                                <td>@item.Tipe.ToString()</td>
+                                <td><input type="button" class="btn btn-danger" @onclick="(() => PrepareForDelete(item))" data-toggle="modal" data-target="#confirmDeleteModal" value="Hapus" /></td>
+                            </tr>
+                        }
+
+                    </tbody>
+                </table>
+                @{
+                    var jumlah = DataAbsensi.Sum(x => x.JumlahOrang);
+                }
+                <div class="alert alert-info">Total kehadiran @jumlah.ToString("n0") orang</div>
+            </div>
+        }
+    </div>
+</div>
+<ConfirmDialog OnClick="@Delete" />
+
+
+<div style="display:none;">
+    <video id="@options.VideoID"
+           style="background-color:lightblue; visibility:hidden;"
+           width="@options.Width">
+        Video stream tidak tersedia.
+    </video>
+
+</div>
+@code {
+    TipeAbsensi Jenis = TipeAbsensi.Offline;
+
+    List<Absensi> DataAbsensi;
+
+    List<Ngaji> ListAcara;
+    DateTime _Tanggal;
+    public DateTime Tanggal
+    {
+        set
+        {
+            _Tanggal = value;
+            From = new DateTime(value.Year, value.Month, value.Day);
+            To = new DateTime(value.Year, value.Month, value.Day, 23, 59, 59);
+            ReloadData();
+        }
+        get
+        {
+            return _Tanggal;
+        }
+    }
+    Absensi itemObject = new Absensi();
+
+    public DateTime From { set; get; }
+    public DateTime To { set; get; }
+    MoslemToolkit.Data.JamaahService jmsvc;
+
+    string FileUrl = string.Empty;
+
+    string UserName;
+
+    long _AcaraId = -1;
+    public long AcaraId
+    {
+        set
+        {
+            _AcaraId = value;
+            ReloadData();
+        }
+        get { return _AcaraId; }
+    }
+
+    const int HeightPic = AppConstants.FACE_HEIGHT;//60;
+    const int WidthPic = AppConstants.FACE_WIDTH;// 80;
+
+    string ImageId = "imgcam1";
+    bool IsCamStarting = false;
+    Jamaah _jamaah;
+    public Jamaah SelJamaah
+    {
+        get { return _jamaah; }
+        set
+        {
+            _jamaah = value;
+            if (_jamaah != null)
+            {
+                UserName = _jamaah.Nama;
+                //this.TaskObject.Telepon = _jamaah.Telepon;
+                //this.TaskObject.Alamat = _jamaah.Alamat;
+            }
+        }
+    }
+
+    async void ReloadData()
+    {
+        if (AcaraId > -1)
+        {
+            DataAbsensi = service.GetDataByDate(AcaraId, From, To, Jenis);
+        }
+    }
+    private void PrepareForDelete(Absensi item)
+    {
+        itemObject = item;
+    }
+
+    private async Task Delete()
+    {
+        var task = service.DeleteData(itemObject.Id);
+        await JSRuntime.InvokeAsync<object>("CloseModal", "confirmDeleteModal");
+        ReloadData();
+        itemObject = new Absensi() { Id = -1 };
+    }
+
+    public string GetImageAsBase64Url(string url)
+    {
+
+        using (var client = new HttpClient())
+        {
+            var bytes = client.GetByteArrayAsync(url).GetAwaiter().GetResult();
+            return "data:image/png;base64," + Convert.ToBase64String(bytes);
+        }
+    }
+    private async Task<IEnumerable<Jamaah>> SearchNama(string searchText)
+    {
+        var datas = jmsvc.FindByKeyword(searchText);
+        return await Task.FromResult(datas);
+    }
+
+    WebCamOptions options = new WebCamOptions()
+    {
+        CanvasID = "canvas1",
+        VideoID = "video1"
+    };
+
+    void Back()
+    {
+        NavMgr.NavigateTo("/");
+    }
+
+    void Simpan()
+    {
+        Tanggal = DateHelper.GetLocalTimeNow();
+        if (string.IsNullOrEmpty(FileUrl))
+        {
+            toastService.ShowError("Ambil foto terlebih dahulu");
+        }
+        else if (string.IsNullOrEmpty(UserName))
+        {
+            toastService.ShowError("Isi Nama terlebih dahulu");
+        }
+        else
+       if (AcaraId < 0)
+        {
+            toastService.ShowError("Mohon pilih kegiatan yang di ikuti");
+        }
+        else
+        {
+            absenService.Absen(new Absensi() { Nama = UserName, Tanggal = Tanggal, RefId = AcaraId, JumlahOrang = 1, Tipe = TipeAbsensi.Offline, PhotoUrl = FileUrl }, true);
+            toastService.ShowSuccess("Absen berhasil. Ajkhr");
+            ReloadData();
+        }
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+    }
+
+
+    protected override void OnInitialized()
+    {
+        options.Filter =
+            "contrast(1.4)";
+        options.Width = WidthPic;
+        if (ListAcara == null)
+            ListAcara = serviceNgaji.GetAllData();
+        Tanggal = DateHelper.GetLocalTimeNow();
+        if (jmsvc == null) jmsvc = new JamaahService();
+
+    }
+    public async Task Start()
+    {
+        await JSRuntime.InvokeVoidAsync("WebCamFunctions.start", options);
+        IsCamStarting = true;
+    }
+    public async Task Capture()
+    {
+        if (!IsCamStarting)
+        {
+            toastService.ShowInfo("start camera dulu.");
+            return;
+        }
+        var img64 = await JSRuntime.InvokeAsync<string>("CaptureCanvas", options.CanvasID, ImageId);
+        byte[] datas = System.Convert.FromBase64String(img64);
+        if (datas != null)
+        {
+            RandomGenerator gen = new RandomGenerator();
+            // Just load into .NET memory to show it can be done
+            // Alternatively it could be saved to disk, or parsed in memory, or similar
+
+
+
+            var result = await faceService.UploadAndDetectFaces(datas);
+
+            //Image image = Image.FromStream(ms);
+            //Convert to Bitmap
+            //Bitmap bitmapImage = (Bitmap)image;
+
+            //Set the specific image data into the ImageInputData type used in the DataView
+            //ImageInputData imageInputData = new ImageInputData { Image = bitmapImage };
+
+            //Detect the objects in the image
+            //var result = DetectAndPaintImage(imageInputData);
+            var ms = new MemoryStream();
+            result.img.Save(ms, result.img.RawFormat);
+
+            //end of detection
+            var bytes = ImageHelper.FixedSize(ms, WidthPic, HeightPic, false);
+            string newName = $"absensioffline_{DateTime.Now.ToString("dd_MM_yyyy")}_{gen.RandomNumber(5)}.png";
+            //var bytes = ms.ToArray();
+            ms.Dispose();
+            await blob.UploadFile(newName, bytes);
+            FileUrl = $"{AppConstants.UploadUrlPrefix}/{newName}";
+            var faceCount = result.faces.Count();
+            //absenService.Update(new Absensi() { Nama = Username, Tanggal = Tanggal, RefId = AcaraId, PhotoUrl=FileUrl, JumlahOrang = faceCount<1?1:faceCount });
+        }
+    }
+
+
+
+}

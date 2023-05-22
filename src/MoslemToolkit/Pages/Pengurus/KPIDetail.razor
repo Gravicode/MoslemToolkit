@@ -1,0 +1,113 @@
+﻿@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject IJSRuntime jsRuntime
+@*@namespace MoslemToolkit.Pages.Master*@
+@using System.IO
+@inject IToastService toastService
+
+<div class="modal" tabindex="-1" role="dialog" id="taskModal">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@CustomHeader</h5>
+
+
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@TaskObject" OnValidSubmit="@HandleValidSubmit">
+                    <DataAnnotationsValidator />
+
+                    <div class="form-group">
+                        <label for="tugas">Dapukan</label>
+                        <select @bind="@TaskObject.DapukanId" id="tugas">
+                            <option value="-">Pilih</option>
+                            @if (DataDapukan != null)
+                            {
+                                @foreach (var item in DataDapukan)
+                                {
+                                    <option value="@item.Id">@item.Nama</option>
+
+                                }
+                            }
+                        </select>
+                        <ValidationMessage For="@(() => TaskObject.DapukanId)" />
+                    </div>
+
+                     <div class="form-group">
+                        <label for="cat">Kategori</label>
+                        <InputText id="cat" class="form-control" @bind-Value="@TaskObject.Kategori" />
+                        <ValidationMessage For="@(() => TaskObject.Kategori)" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="nama">Parameter KPI</label>
+                        <input type="hidden" @bind-value="@TaskObject.Id" />
+                        <InputText id="Parameter" class="form-control" @bind-Value="@TaskObject.Parameter" />
+                        <ValidationMessage For="@(() => TaskObject.Parameter)" />
+                    </div>
+
+
+                    <div class="form-group">
+                        <label for="deskripsi">Deskripsi</label>
+                        <InputTextArea id="orderno" class="form-control" @bind-Value="@TaskObject.Deskripsi" />
+                        <ValidationMessage For="@(() => TaskObject.Deskripsi)" />
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    MoslemToolkit.Data.DapukanService Dapukansvc;
+    public IEnumerable<Dapukan> DataDapukan { get; set; }
+    public string FileUrl { get; set; }
+    [Parameter]
+    public RenderFragment CustomHeader { get; set; }
+    [Parameter]
+    public KPI TaskObject { get; set; }
+    [Parameter]
+    public Action DataChanged { get; set; }
+    MoslemToolkit.Data.KPIService service;
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new KPIService();
+        if (Dapukansvc == null) Dapukansvc = new DapukanService();
+        DataDapukan = Dapukansvc.GetAllData();
+
+    }
+    private async void HandleValidSubmit()
+    {
+
+
+        if (TaskObject.Id == 0)
+        {
+
+            service.InsertData(TaskObject);
+
+        }
+        else
+        {
+            service.UpdateData(TaskObject);
+        }
+
+        await CloseTaskModal();
+        DataChanged?.Invoke();
+    }
+
+
+
+    private async Task CloseTaskModal()
+    {
+        await jsRuntime.InvokeAsync<object>("CloseModal", "taskModal");
+    }
+
+
+}

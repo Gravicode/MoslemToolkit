@@ -1,0 +1,107 @@
+﻿@using MoslemToolkit.Models
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@inject NavigationManager NavMgr
+<h4>Diskusi</h4>
+<div class="container">
+    <div class="row">
+        <div class="well col-12 col-lg-12">
+            <div>
+                <div class="textwrapper"><textarea @bind="Pesan" placeholder="Ketik pesan Anda" cols="10" rows="2" id="rules" /></div>
+
+                <hr />
+                <button class="btn btn-info" @onclick="PostMessage" type="button">Kirim Pesan</button>
+                <button class="btn btn-success" @onclick="LoadData" type="button">Refresh</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="ex1">
+    @if (Messages != null)
+    {
+
+        int counter = 0;
+        foreach (var item in Messages)
+        {
+            counter++;
+            if (counter % 2 == 0)
+            {
+                <div class="container">
+                    <p><b>@item.UserName :</b>@item.Message</p>
+                    <span class="time-right">@item.Tanggal.ToString("dd/MM/yyyy HH:mm:ss")</span>
+                </div>
+            }
+            else
+            {
+                <div class="container darker">
+                    <p><b>@item.UserName: </b>@item.Message</p>
+                    <span class="time-right">@item.Tanggal.ToString("dd/MM/yyyy HH:mm:ss")</span>
+                </div>
+            }
+        }
+    }
+</div>
+    @code {
+    public string UserName { get; set; }
+        public string Pesan { get; set; }
+        ChatMessageService service;
+        [Parameter] public long ThreadId { get; set; }
+        [Parameter] public List<ChatMessage> Messages { get; set; }
+        protected override async Task OnInitializedAsync()
+        {
+            if (service == null) service = new ChatMessageService();
+            LoadData();
+        }
+
+        public void SetThreadId(long NewThreadId)
+        {
+            ThreadId = NewThreadId;
+            LoadData();
+            StateHasChanged();
+        }
+        void PostMessage()
+        {
+            if (!string.IsNullOrEmpty(Pesan))
+            {
+                var hasil = service.InsertData(new ChatMessage() { Message = Pesan, UserName = UserName, Tanggal = DateHelper.GetLocalTimeNow(), ThreadId = ThreadId });
+                if (hasil)
+                {
+                    Pesan = "";
+                    LoadData();
+                }
+            }
+        }
+
+        void LoadData()
+        {
+            if (ThreadId > 0)
+            {
+                Messages = service.GetByThreadId(ThreadId);
+            }
+        }
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+        if (firstRender)
+        {
+            if (string.IsNullOrEmpty(UserName))
+            {
+                try
+                {
+                    UserName = await localStorage.GetItemAsync<string>(AppConstants.NameKey);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+                if (string.IsNullOrEmpty(UserName))
+                {
+                    NavMgr.NavigateTo($"/login");
+                }
+                else
+                {
+
+                }
+            }
+        }
+        }
+    }

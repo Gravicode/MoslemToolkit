@@ -1,0 +1,12 @@
+﻿@inherits LayoutComponentBase
+@using Blazored.Toast.Configuration
+
+@Body
+<audio id="notification" src="/sound/notification.ogg" />
+<audio id="alarm2" src="/sound/sahur_short.ogg" />
+<audio id="alarm1" src="/sound/bangun_malam.ogg" />
+<BlazoredToasts Timeout="7" Position="ToastPosition.BottomRight"
+                IconType="IconType.FontAwesome"
+                SuccessClass="success-toast-override"
+                SuccessIcon="fa fa-thumbs-up"
+                ErrorIcon="fa fa-bug" />

@@ -1,0 +1,162 @@
+﻿@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject IJSRuntime jsRuntime
+@inject IToastService toastService
+@inject CashflowQurbanService service
+
+<div class="modal" tabindex="-1" role="dialog" id="taskModal">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@CustomHeader</h5>
+
+
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@TaskObject" OnValidSubmit="@HandleValidSubmit">
+                    <DataAnnotationsValidator />
+
+                    <div class="form-group">
+                        <label for="nama">Nama Transaksi</label>
+                        <input type="hidden" @bind-value="@TaskObject.Id" />
+                        <InputText id="nama" class="form-control" @bind-Value="@TaskObject.Nama" />
+                        <ValidationMessage For="@(() => TaskObject.Nama)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="tgl">Tanggal</label>
+                        <InputDate id="tgl" class="form-control" @bind-Value="@TaskObject.Tanggal" />
+                        <ValidationMessage For="@(() => TaskObject.Tanggal)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="tipe">Tipe</label>
+                        <select @bind="@TaskObject.Tipe" id="tipe">
+                            <option value="-">Pilih</option>
+                            @foreach (CashflowType item in Enum.GetValues(typeof(CashflowType)))
+                            {
+                                <option value="@item">@item.ToString()</option>
+
+                            }
+                        </select>
+                        <ValidationMessage For="@(() => TaskObject.Tipe)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="kategori">Kategori</label>
+                        <select @bind="@TaskObject.Kategori" id="kategori">
+                            <option value="-">Pilih</option>
+                            @foreach (var item in AppConstants.KategoriCashflowQurban)
+                            {
+                                <option value="@item">@item</option>
+
+                            }
+                        </select>
+                        <ValidationMessage For="@(() => TaskObject.Kategori)" />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="satuan">Satuan</label>
+                        <InputSelect id="satuan" class="form-control"
+                                     @bind-Value="TaskObject.Satuan">
+                            <option value="-1">Pilih</option>
+                            <option value="Pcs">Pcs</option>
+                            <option value="Kg">Kg</option>
+                            <option value="Paket">Paket</option>
+                            <option value="Gram">Gram</option>
+                            <option value="Ons">Ons</option>
+                            <option value="Unit">Unit</option>
+                            <option value="Liter">Liter</option>
+                        </InputSelect>
+                        <ValidationMessage For="@(() => TaskObject.Satuan)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="hargasatuan">Harga Satuan</label>
+                        <InputNumber id="hargasatuan" class="form-control" @bind-Value="@TaskObject.HargaSatuan" />
+                        <ValidationMessage For="@(() => TaskObject.HargaSatuan)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="qty">Quantity</label>
+                        <InputNumber id="qty" class="form-control" @bind-Value="@TaskObject.Quantity" />
+                        <ValidationMessage For="@(() => TaskObject.Quantity)" />
+                    </div>
+                    @{
+                        Hitung();
+                    }
+                    <div class="form-group">
+                        <label for="total">Total</label>
+                        <InputNumber id="total" class="form-control" @bind-Value="@TaskObject.Total" />
+                        <ValidationMessage For="@(() => TaskObject.Total)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="keterangan">Keterangan</label>
+                        <InputTextArea id="keterangan" class="form-control" @bind-Value="@TaskObject.Keterangan" />
+                        <ValidationMessage For="@(() => TaskObject.Keterangan)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="dibayar">Dibayar Oleh</label>
+                        <InputText id="dibayar" class="form-control" @bind-Value="@TaskObject.DibayarOleh" />
+                        <ValidationMessage For="@(() => TaskObject.DibayarOleh)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="diterima">Diterima Oleh</label>
+                        <InputText id="diterima" class="form-control" @bind-Value="@TaskObject.DiterimaOleh" />
+                        <ValidationMessage For="@(() => TaskObject.DiterimaOleh)" />
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    void Hitung()
+    {
+        if (TaskObject.Quantity != 0 && TaskObject.HargaSatuan != 0)
+            TaskObject.Total = TaskObject.Quantity * TaskObject.HargaSatuan;
+    }
+    public string FileUrl { get; set; }
+    [Parameter]
+    public RenderFragment CustomHeader { get; set; }
+    [Parameter]
+    public CashflowQurban TaskObject { get; set; }
+    [Parameter]
+    public Action DataChanged { get; set; }
+    //MoslemToolkit.Data.CashflowQurbanService service;
+    protected override async Task OnInitializedAsync()
+    {
+        //if (service == null) service = new CashflowQurbanService();
+
+    }
+    private async void HandleValidSubmit()
+    {
+
+
+        if (TaskObject.Id == 0)
+        {
+
+            service.InsertData(TaskObject);
+
+        }
+        else
+        {
+            service.UpdateData(TaskObject);
+        }
+
+        await CloseTaskModal();
+        DataChanged?.Invoke();
+    }
+
+
+
+    private async Task CloseTaskModal()
+    {
+        await jsRuntime.InvokeAsync<object>("CloseModal", "taskModal");
+    }
+
+
+}

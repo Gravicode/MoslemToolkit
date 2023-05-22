@@ -1,0 +1,140 @@
+﻿@using MoslemToolkit.Models
+@inject IToastService toastService
+@inject NavigationManager NavMgr
+
+@if (selNasehat != null)
+{
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-2">
+                <div class="card-header">
+                    Jadwal Nasehat
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">Topik: @selNasehat.Topik</h5>
+                    <p class="card-text">
+                        @selNasehat.Tanggal.ToString("dd MMMM yyyy"), penasehat 1 :
+                        <span class="badge badge-pill badge-primary">@selNasehat.Penasehat1</span>, penasehat 2 :
+                        <span class="badge badge-pill badge-success">@selNasehat.Penasehat2</span>
+                    </p>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+}
+else
+{<div class="row">
+        <div class="col-12">
+            <div class="card mb-2">
+                <div class="card-header">
+                    Jadwal Nasehat
+                </div>
+                <div class="card-body">
+
+                    <p class="card-text">
+                        Tidak ada nasehat hari ini.
+                    </p>
+
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@{
+    var sdc = GetSDC();
+    var sdc2 = GetSDCDesktop();
+}
+@if (sdc != null)
+{
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-2">
+                <div class="card-header">
+                    Aplikasi SDC v1.0
+                </div>
+                <div class="card-body">
+
+                    <p class="card-text">
+                        <a href="@sdc.FileUrl" class="btn btn-info mb-1 mr-1">Download Android</a>
+                        @if(sdc2!=null){
+                        <a href="@sdc2.FileUrl" class="btn btn-info mb-1 mr-1">Download Windows</a>
+                        }
+                        @*<button class="btn btn-primary" @onclick="Tutorial">Tutorial Cara Pasang</button>*@
+                        <button type="button" class="btn btn-primary mb-1" data-toggle="modal" data-target="#sdcVideoModal">
+                            Video Tutorial Cara Pasang
+                        </button>
+                        <button type="button" class="btn btn-success mb-1" @onclick="()=>DownloadTutorialSDC()">
+                            Dokumen Tutorial Cara Pasang
+                        </button>
+                    </p>
+
+                </div>
+            </div>
+        </div>
+    </div>
+}
+<div class="modal" tabindex="-1" id="sdcVideoModal" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Video Tutorial SDC</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <video controls>
+                    <source src="https://storagemurahaje.blob.core.windows.net/ngaji-online/video/SDC.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+@code {
+    Nasehat selNasehat;
+    MoslemToolkit.Data.NasehatService service;
+    MoslemToolkit.Data.DokumenService doksvc;
+
+    void Tutorial()
+    {
+        toastService.ShowInfo("tutorial belum tersedia" );
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new NasehatService();
+        if (doksvc == null) doksvc = new DokumenService();
+
+        selNasehat = service.GetNasehatHariIni(DateHelper.GetLocalTimeNow());
+
+
+    }
+
+    void DownloadTutorialSDC(){
+        var data = doksvc.GetAllData();
+        var selItem = data.Where(x => x.Nama.Contains("Panduan Pasang SDC")).FirstOrDefault();
+        if (selItem != null)
+            NavMgr.NavigateTo(selItem.FileUrl);
+        else
+            toastService.ShowInfo("Tutorial tidak ditemukan");
+    }
+
+    Dokumen GetSDC()
+    {
+        var data = doksvc.GetAllData();
+        var selItem = data.Where(x => x.Nama.Contains("SDC Android")).FirstOrDefault();
+        return selItem;
+    }
+
+    Dokumen GetSDCDesktop()
+    {
+        var data = doksvc.GetAllData();
+        var selItem = data.Where(x => x.Nama.Contains("SDC Desktop")).FirstOrDefault();
+        return selItem;
+    }
+}

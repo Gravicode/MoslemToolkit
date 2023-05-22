@@ -1,0 +1,147 @@
+﻿@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject IJSRuntime jsRuntime
+@*@namespace MoslemToolkit.Pages.Master*@
+@using System.IO
+@inject IToastService toastService
+@inject AzureBlobHelper blob;
+
+<div class="modal" tabindex="-1" role="dialog" id="taskModal">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@CustomHeader</h5>
+
+
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@TaskObject" OnValidSubmit="@HandleValidSubmit">
+                    <DataAnnotationsValidator />
+                  
+                    <div class="form-group">
+                        <label for="nama">Nama Dokumen</label>
+                        <input type="hidden" @bind-value="@TaskObject.Id" />
+                        <InputText id="nama" class="form-control" @bind-Value="@TaskObject.Nama" />
+                        <ValidationMessage For="@(() => TaskObject.Nama)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="kategori">Kategori</label>
+                        <select @bind="@TaskObject.Kategori" id="kategori">
+                            <option value="-">Pilih</option>
+
+                            <option value="Media">Media</option>
+                            <option value="Gambar">Gambar</option>
+                            <option value="Dokumen">Dokumen</option>
+                            <option value="Lainnya">Lainnya</option>
+                        </select>
+                        <ValidationMessage For="@(() => TaskObject.Kategori)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="tanggal">Tanggal</label>
+                        <InputDate id="tanggal" class="form-control" @bind-Value="@TaskObject.Tanggal" />
+                        <ValidationMessage For="@(() => TaskObject.Tanggal)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="ket">Keterangan</label>
+                        <InputTextArea id="ket" class="form-control" @bind-Value="@TaskObject.Keterangan" />
+                        <ValidationMessage For="@(() => TaskObject.Keterangan)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="oleh">Di Upload Oleh</label>
+                        <InputText id="oleh" class="form-control" @bind-Value="@TaskObject.CreatedBy" />
+                        <ValidationMessage For="@(() => TaskObject.CreatedBy)" />
+                    </div>
+                   
+                    <div class="form-group">
+                        <label for="nim">Upload Dokumen</label>
+                        @if (!string.IsNullOrEmpty(FileUrl))
+                        {
+                            <div class="alert alert-info"> dokumen sudah upload.</div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning"> pilih dokumen lalu tunggu sampai dokumen selesai di upload.</div>
+                        }
+                        <BlazorInputFile.InputFile OnChange="HandleFileSelected" />
+
+                    </div>
+
+
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    public string FileUrl { get; set; }
+    [Parameter]
+    public RenderFragment CustomHeader { get; set; }
+    [Parameter]
+    public Dokumen TaskObject { get; set; }
+    [Parameter]
+    public Action DataChanged { get; set; }
+    MoslemToolkit.Data.DokumenService service;
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new DokumenService();
+        FileUrl = TaskObject.FileUrl;
+    }
+    private async void HandleValidSubmit()
+    {
+
+        if (!string.IsNullOrEmpty(FileUrl))
+            TaskObject.FileUrl = FileUrl;
+        else
+        {
+            toastService.ShowError("Silakan pilih dokumen terlebih dahulu");
+            return;
+        }
+        if (TaskObject.Id == 0)
+        {
+
+            service.InsertData(TaskObject);
+
+        }
+        else
+        {
+            service.UpdateData(TaskObject);
+        }
+
+        await CloseTaskModal();
+        DataChanged?.Invoke();
+    }
+
+    async Task HandleFileSelected(IFileListEntry[] files)
+    {
+        var file = files.FirstOrDefault();
+        if (file != null)
+        {
+            // Just load into .NET memory to show it can be done
+            // Alternatively it could be saved to disk, or parsed in memory, or similar
+
+            var ms = new MemoryStream();
+            await file.Data.CopyToAsync(ms);
+            //var bytes = ImageHelper.FixedSize(ms, 300, 300, false);
+            string newName = $"dokumen_{DateTime.Now.ToString("dd_MM_yyyy")}_{Path.GetFileNameWithoutExtension(file.Name)}{Path.GetExtension(file.Name)}";
+            var bytes = ms.ToArray();
+            ms.Dispose();
+            await blob.UploadFile(newName, bytes );
+            FileUrl = $"{AppConstants.UploadUrlPrefix}/{newName}";
+        }
+    }
+
+    private async Task CloseTaskModal()
+    {
+        await jsRuntime.InvokeAsync<object>("CloseModal", "taskModal");
+    }
+
+
+}

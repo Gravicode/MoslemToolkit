@@ -1,0 +1,270 @@
+﻿@page "/master/Pinjaman"
+@layout MainLayoutKU
+@inject IJSRuntime jsRuntime
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject NavigationManager NavMgr
+@*@namespace MoslemToolkit.Pages.Master*@
+@inject IToastService toastService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@using System.IO
+<h1>Daftar Pinjaman</h1>
+
+<p>Gunakan halaman ini untuk menyimpan daftar Pinjaman</p>
+
+@if (DataPinjaman == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <body onbeforeunload="TestDataTablesRemove('#gridData')">
+        <div class="table-responsive">
+            <table id="gridData" name="gridData" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Tanggal Pinjam</th>
+                        <th>Nama</th>
+                        <th>Keterangan</th>
+                        <th>Tanggal Pengembalian</th>
+                        <th>Jumlah (Rp)</th>
+                        <th>Sisa (Rp)</th>
+                        <th>Cicilan</th>
+                        <th>Status</th>
+
+                        <th>Actions</th>
+                    </tr>
+
+                </thead>
+                <tbody>
+                    @foreach (var item in DataPinjaman)
+                    {
+
+                        var Sisa = item.JumlahPinjaman - item.Cicilans?.Sum(x => x.Jumlah);
+                        <tr>
+                            <td>@item.TanggalPinjam.ToString("MM-dd-yyyy")</td>
+                            <td>@item.Nama</td>
+                            <td>@item.Keterangan</td>
+                            <td>@item.TanggalPengembalian.ToString("MM-dd-yyyy")</td>
+                            <td>@item.JumlahPinjaman.ToString("n2")</td>
+                            <td>@Sisa?.ToString("n2") </td>
+                            <td>
+                                @if(item.Cicilans!=null && item.Cicilans.Count > 0)
+                                    {
+                                    var totalCicilan = 0.0;
+                                <table>
+                                    <tr>
+                                        <td>Tanggal</td>
+                                        <td>Jumlah (Rp)</td>
+                                        <td>Diberikan Oleh</td>
+                                        <td>Actions</td>
+                                    </tr>
+                                    @foreach (var detail in item.Cicilans)
+                                    {
+                                        <tr>
+                                            <td>@detail.Tanggal.ToString("MM-dd-yyyy")</td>
+                                            <td>@detail.Jumlah.ToString("n2")</td>
+                                            <td>@detail.DibayarOleh</td>
+                                            <td> <a href @onclick="(() => PrepareForDeleteCicilan(detail))" data-toggle="modal" data-target="#confirmDeleteCicilan" >Hapus</a></td>
+                                        </tr>
+                                         { 
+                                            totalCicilan += detail.Jumlah;
+                                         }
+                                    }
+                                    <tr>
+                                        <td>
+                                            Total  
+                                        </td>
+                                        <td>
+                                            <b>@totalCicilan.ToString("n2")</b>
+                                        </td>
+                                        <td colspan="2">
+
+                                        </td>
+                                    </tr>
+                                </table>
+                                    }
+                            </td>
+                            <td>@item.Status.ToString()</td>
+
+                            <td>
+                                @if (HasLogin)
+                                {
+                                    <input type="button" class="btn btn-primary btn-sm mt-1" @onclick="(() => PrepareForEdit(item))" data-toggle="modal" data-target="#taskModal" value="Ubah" />
+                                    <input type="button" class="btn btn-info btn-sm mt-1" @onclick="(() => PrepareForCicilan(item))" data-toggle="modal" data-target="#cicilanModal" value="Bayar Cicilan" />
+                                    <input type="button" class="btn btn-danger btn-sm mt-1" @onclick="(() => PrepareForDelete(item))" data-toggle="modal" data-target="#confirmDeleteModal" value="Hapus" />
+                                }
+                                else
+                                {
+                                    <p>-</p>
+                                }
+
+                            </td>
+
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </body>
+}
+@if (HasLogin)
+{
+    <div>
+        <input type="button" data-toggle="modal" data-target="#taskModal" class="btn btn-primary" value="Tambah Pinjaman" @onclick="(() => InitializeitemObject())" />
+    </div>
+}
+<ConfirmDialog OnClick="@Delete" />
+<ConfirmDialog ModalId="confirmDeleteCicilan" OnClick="@DeleteCicilan" />
+<PinjamanDetail @ref="detail" TaskObject=@itemObject DataChanged="@DataChanged">
+    <CustomHeader>@customHeader</CustomHeader>
+</PinjamanDetail>
+<CicilanDetail @ref="cicilanDetail" TaskObject=@cicilanObject DataChanged="@DataChanged">
+    <CustomHeader>@cicilanHeader</CustomHeader>
+</CicilanDetail>
+
+@code {
+    bool HasLogin;
+    PinjamanDetail detail;
+    CicilanDetail cicilanDetail;
+    MoslemToolkit.Data.PinjamanService service;
+    MoslemToolkit.Data.CicilanService cicilanService;
+    string customHeader = string.Empty;
+    string cicilanHeader = string.Empty;
+    List<Pinjaman> DataPinjaman;
+    Pinjaman itemObject = new Pinjaman();
+    Cicilan cicilanObject = new Cicilan();
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    string UserName;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new PinjamanService();
+        if (cicilanService == null) cicilanService = new CicilanService();
+
+        DataPinjaman = service.GetAllData();
+
+
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (DataPinjaman != null && DataPinjaman.Count > 0)
+        {
+
+            await jsRuntime.InvokeAsync<object>("TestDataTablesAdd", "#gridData");
+        }
+        if (firstRender)
+        {
+            if (string.IsNullOrEmpty(UserName))
+            {
+                try
+                {
+                    UserName = await localStorage.GetItemAsync<string>(AppConstants.NameKey);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+                if (string.IsNullOrEmpty(UserName))
+                {
+                    NavMgr.NavigateTo($"/login");
+                }
+                else
+                {
+
+                }
+            }
+            if (!string.IsNullOrEmpty(UserName) && UserName == AppConstants.USER_KU)
+            {
+                HasLogin = true;
+                StateHasChanged();
+            }
+        }
+    }
+
+    private void InitializeitemObject()
+    {
+
+        itemObject = new Pinjaman();
+        itemObject.TanggalPinjam = DateHelper.GetLocalTimeNow();
+        itemObject.TanggalPengembalian = itemObject.TanggalPinjam.AddMonths(1);
+        itemObject.Status = StatusPinjaman.BelumLunas;
+
+
+        //itemObject.Id = -1;
+
+        customHeader = "Tambah Pinjaman";
+    }
+    async void DataChanged()
+    {
+        DataPinjaman = service.GetAllData();
+        await InvokeAsync(StateHasChanged);
+    }
+    private void PrepareForEdit(Pinjaman item)
+    {
+        customHeader = "Ubah Pinjaman";
+        itemObject = item;
+
+    }
+    private void PrepareForCicilan(Pinjaman item)
+    {
+        cicilanObject = new Cicilan();
+        cicilanObject.Tanggal = DateHelper.GetLocalTimeNow();
+        cicilanHeader = "Bayar Cicilan";
+        cicilanObject.Jumlah = 0;
+        cicilanObject.PinjamanId = item.Id;
+        cicilanDetail.PinjamanParent = item;
+    }
+    private void PrepareForDelete(Pinjaman item)
+    {
+        itemObject = item;
+    }
+    private void PrepareForDeleteCicilan(Cicilan item)
+    {
+        cicilanObject = item;
+        itemObject = item.Pinjaman;
+    }
+    private void ClearChat(Pinjaman item)
+    {
+        ChatMessageService svc = new ChatMessageService();
+        if (item != null)
+        {
+            svc.ClearChat(item.Id);
+        }
+    }
+    private async Task Delete()
+    {
+        var task = service.DeleteData(itemObject.Id);
+        await jsRuntime.InvokeAsync<object>("CloseModal", "confirmDeleteModal");
+
+        itemObject = new Pinjaman() { Id = -1 };
+        DataChanged();
+    }
+    private async Task DeleteCicilan()
+    {
+        var task = cicilanService.DeleteData(cicilanObject.Id);
+        if (itemObject.Cicilans?.Sum(x => x.Jumlah) - cicilanObject.Jumlah >= itemObject.JumlahPinjaman)
+        {
+            itemObject.Status = StatusPinjaman.Lunas;
+        }
+        else
+        {
+            itemObject.Status = StatusPinjaman.BelumLunas;
+        }
+        service.UpdateData(itemObject);
+
+        await jsRuntime.InvokeAsync<object>("CloseModal", "confirmDeleteCicilan");
+
+        cicilanObject = new Cicilan() { Id = -1 };
+        DataChanged();
+    }
+
+    private async System.Threading.Tasks.Task applyPager(string TableName)
+    {
+        await jsRuntime.InvokeAsync<object>("applyPager", TableName);
+    }
+
+}

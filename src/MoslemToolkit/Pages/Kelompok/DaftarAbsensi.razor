@@ -1,0 +1,254 @@
+﻿@page "/daftar-absensi"
+
+@inject AbsensiService service
+@inject NgajiService serviceNgaji
+@inject IJSRuntime jsRuntime
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@using System.Linq
+@using System.IO
+@inject IToastService toastService
+@inject FaceService faceService
+@using System.IO
+@inject AzureBlobHelper blob;
+@using MoslemToolkit.Helpers
+
+<h1>Daftar Absensi</h1>
+
+<p>Daftar hadir jamaah.</p>
+
+<div>
+    <div class="form-group">
+        <label for="jenis-kelamin">Acara</label>
+        @if (ListAcara != null)
+        {
+            <select id="acara" class="form-control"
+                    @onchange="@UbahAcara">
+                <option value="-1">Select</option>
+                @for (int i = 0; i < ListAcara.Count; i++)
+                {
+                    <option value="@ListAcara[i].Id">
+                        @ListAcara[i].Nama
+                    </option>
+                }
+            </select>
+        }
+    </div>
+    <div class="form-group">
+        <label for="from" >Dari</label>
+        <input type="date"  @bind="From" class="form-control" id="from">
+    </div>
+    <div class="form-group">
+        <label for="to" >Sampai</label>
+        <input type="date" @bind="To" class="form-control" id="to">
+    </div>
+    <div class="form-group">
+                        <label for="jenis">Jenis Kehadiran</label>
+                        <select @bind="@Jenis" id="jenis">
+                            <option value="-">Pilih</option>
+                            @foreach (TipeAbsensi item in Enum.GetValues(typeof(TipeAbsensi)))
+                            {
+                                <option value="@item">@item.ToString()</option>
+
+                            }
+                        </select>
+    </div>
+    <button type="button" @onclick="()=>ReloadData()" class="btn btn-primary">Cari</button>
+</div>
+@if (DataAbsensi == null)
+{
+    <p><em>Tidak ada data...</em></p>
+}
+else
+{
+    <button class="btn btn-primary mt-1 mb-1" @onclick="DownloadFile">Download as Excel</button>
+    <button class="btn btn-info mt-1 mb-1" @onclick="DownloadImage">Download as Image</button>
+    <button class="btn btn-danger mt-1 mb-1" @onclick="Recount">Hitung Jumlah Orang</button>
+    <div class="table-responsive">
+        <table id="@TableAbsenId" style="background-color:white;" class="table table-striped w-auto">
+            <thead>
+                <tr>
+                    <th>Nama</th>
+                    <th>Jam Masuk</th>
+                    <th>Jumlah Orang</th>
+
+                    <th>Foto</th>
+                    <th>Kehadiran</th>
+                </tr>
+
+            </thead>
+            <tbody>
+                @foreach (var item in DataAbsensi)
+                {
+                    <tr>
+                        <td>@item.Nama</td>
+                        <td>@item.Tanggal.ToString("dd/MMM/yyyy HH:mm")</td>
+                        <td>@item.JumlahOrang.ToString("n0")</td>
+                        <td>@if(!string.IsNullOrEmpty(item.PhotoUrl)){
+                            
+                            var embed = ImageHelper.GetImageAsBase64Url(item.PhotoUrl);
+                            //var strHtml = $"<img src='{embed}' width='100' alt='foto'/>";
+                            
+                            <img src='@embed' width='100' alt='foto'/>
+                            }
+                            else
+                            {
+                              <p>tidak ada</p>
+                            }
+                        </td>
+                        <td>@item.Tipe.ToString()</td>
+                    </tr>
+                }
+                
+            </tbody>
+        </table>
+        @{
+                var jumlah = DataAbsensi.Sum(x => x.JumlahOrang);
+        }
+        <div class="alert alert-info">Total kehadiran @jumlah.ToString("n0") orang</div>
+        </div>
+        }
+
+        @code {
+    const int HeightPic = AppConstants.FACE_HEIGHT;//60;
+    const int WidthPic = AppConstants.FACE_WIDTH;// 80;
+    TipeAbsensi Jenis;
+    string TableAbsenId = "table-absen";
+            DateTime _from;
+            public DateTime From {
+                get
+                {
+                    return _from;
+                }
+                set
+                {
+                    _from = value;
+                    if(_from > To)
+                    {
+                        To = new DateTime(_from.Year, _from.Month, _from.Day, 23, 59, 59);
+                    }
+                }
+            }
+            DateTime _to;
+            public DateTime To
+            {
+                get
+                {
+                    return _to;
+                }
+                set
+                {
+                    _to = new DateTime(value.Year, value.Month, value.Day, 23, 59, 59);
+                    if (_to < _from)
+                    {
+                        From = new DateTime(_to.Year, _to.Month, _to.Day);
+                    }
+                }
+            }
+
+            string customHeader = string.Empty;
+            List<Absensi> DataAbsensi;
+            long AcaraId = -1;
+            List<Ngaji> ListAcara;
+            async void DownloadFile()
+            {
+                if (DataAbsensi != null && DataAbsensi.Count > 0)
+                {
+                    var dt = new System.Data.DataTable("data");
+                    dt.Columns.Add("No");
+                    dt.Columns.Add("Nama");
+                    dt.Columns.Add("Waktu Masuk");
+                    dt.Columns.Add("Jumlah Orang");
+
+                    dt.Columns.Add("Foto");
+                    var count = 0;
+                    foreach (var item in DataAbsensi)
+                    {
+                        var newRow = dt.NewRow();
+                        newRow[0] = ++count;
+                        newRow[1] = item.Nama;
+                        newRow[2] = item.Tanggal.ToString("dd/MMM/yyyy HH:mm");
+                        newRow[3] = item.JumlahOrang.ToString("n0");
+
+                        newRow[4] = item.PhotoUrl??"tidak ada";
+                        dt.Rows.Add(newRow);
+                    }
+                    dt.AcceptChanges();
+                    var ExportedFile = ExportData.ExportToExcel("Daftar Hadir", dt);
+                    if (!string.IsNullOrEmpty(ExportedFile))
+                    {
+                        var bytes = File.ReadAllBytes(ExportedFile);
+                        await FileUtil.SaveAs(jsRuntime, "Exported.xlsx", bytes);
+                    }
+                    else
+                    {
+                        toastService.ShowError("Tidak bisa download, terjadi kesalahan.");
+                    }
+                }
+                else
+                    toastService.ShowError("Tidak ada data untuk di download.");
+
+            }
+
+            async Task DownloadImage(){
+                 await jsRuntime.InvokeVoidAsync("HtmlToImage", TableAbsenId);
+            }
+            protected override async Task OnInitializedAsync()
+            {
+                var now = DateHelper.GetLocalTimeNow();
+                From = new DateTime(now.Year,now.Month,now.Day);
+                if (ListAcara == null)
+                    ListAcara = serviceNgaji.GetAllData();
+                ReloadData();
+            }
+            void UbahAcara(ChangeEventArgs e)
+            {
+                AcaraId = int.Parse(e.Value.ToString());
+                Console.WriteLine("It is definitely: " + AcaraId);
+                ReloadData();
+            }
+            async void ReloadData()
+            {
+                if (AcaraId > -1)
+                {
+                    DataAbsensi = service.GetDataByDate(AcaraId, From, To, Jenis);                    
+                }
+            }
+
+    
+
+    public async Task Recount()
+    {
+        var gen = new Tools.RandomGenerator();
+        foreach (var item in DataAbsensi)
+        {
+            if (!string.IsNullOrEmpty(item.PhotoUrl))
+            {
+                try
+                {
+                    var result = await faceService.DetectFacesFromUrl(item.PhotoUrl);
+                    if (result.img != null)
+                    {
+                        var ms = new MemoryStream();
+                        result.img.Save(ms, result.img.RawFormat);
+
+                        //end of detection
+                        var bytes = ImageHelper.FixedSize(ms, WidthPic, HeightPic, false);
+                        string newName = $"absensi_{item.Tanggal.ToString("dd_MM_yyyy")}_{gen.RandomNumber(5)}.png";
+                        //var bytes = ms.ToArray();
+                        ms.Dispose();
+                        await blob.UploadFile(newName, bytes);
+                        var FileUrl = $"{AppConstants.UploadUrlPrefix}/{newName}";
+                        var faceCount = result.faces.Count();
+
+                        item.PhotoUrl = FileUrl;
+                        item.JumlahOrang = faceCount < 1 ? 1 : faceCount;
+                        service.UpdateData(item);
+                    }
+                }catch(Exception ex){
+                    
+                }
+            }
+        }
+    }
+}

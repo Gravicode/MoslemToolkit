@@ -1,0 +1,191 @@
+﻿@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@using System.Linq
+@using System.Globalization
+@inject IJSRuntime jsRuntime
+@*@namespace MoslemToolkit.Pages.Master*@
+@using System.IO
+@inject IToastService toastService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+<div class="modal" tabindex="-1" role="dialog" id="taskModal">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@CustomHeader</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                @if (TaskObject != null)
+                {
+                    <div class="form-group">
+                        <label for="tanggal">Tanggal:</label>
+                        @Tanggal.ToString("dddd, dd MMM yyyy",ci)
+
+                    </div>
+                    <div class="form-group">
+                        <label for="kelas">Kelas:</label>
+                        @TaskObject.Kelas?.Nama
+
+                    </div>
+                    <div class="form-group">
+                        <label for="materi">Materi:</label>
+                        @TaskObject.Materi?.Bab?.Nama - @TaskObject.Materi?.Nama
+
+                    </div>
+                }
+
+                @if (DaftarNilai != null)
+                {
+                    <div class="table-responsive" style="overflow-y:auto;">
+                        <table id="gridData2" name="gridData" class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Pilih</th>
+                                    <th>Nama</th>
+                                    <th>Kehadiran</th>
+                                    <th>Nilai</th>
+                                    <th>Keterangan</th>
+                                    <th>Pengajar</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in DaftarNilai)
+                                {
+                                    <tr>
+                                        <td><input type="checkbox" @bind="@item.Selected"></td>
+                                        <td>@item.Nama</td>
+
+                                        <td>
+                                            <select @bind="@item.NilaiSiswaItem.Kehadiran">
+                                            @foreach (var hadir in Enum.GetValues(typeof(StatusKehadiran)))
+                                            {
+                                                <option value="@hadir">@hadir</option>
+                                            }
+                                            </select>
+                                        </td>
+                                        <td><input type="number" @bind="@item.NilaiSiswaItem.Nilai" /></td>
+                                        <td><input type="text" @bind="@item.NilaiSiswaItem.Keterangan" /></td>
+                                        <td><input type="text" @bind="@item.NilaiSiswaItem.KeteranganDari" /></td>
+
+
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                <button type="submit" class="btn btn-primary" @onclick="HandleValidSubmit">Simpan</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <hr />
+                <KalkulatorNilai></KalkulatorNilai>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    string UserName { set; get; } = "";
+    public class DataNilaiSiswa
+    {
+        public bool Selected { set; get; }
+        public bool IsNew { get; set; } = true;
+        public string Nama { get; set; }
+        public NilaiSiswa NilaiSiswaItem { set; get; }
+    }
+    CultureInfo ci = new CultureInfo("id-ID");
+    List<DataNilaiSiswa> DaftarNilai;
+    public string FileUrl { get; set; }
+    [Parameter]
+    public RenderFragment CustomHeader { get; set; }
+    [Parameter]
+    public MateriPerKelas TaskObject { get; set; }
+    [Parameter]
+    public Kelas selKelas { get; set; }
+    [Parameter]
+    public List<NilaiSiswa> selectedSiswa { get; set; }
+    [Parameter]
+    public Action DataChanged { get; set; }
+    [Parameter]
+    public DateTime Tanggal { get; set; }
+    [Parameter]
+    public MoslemToolkit.Data.NilaiSiswaService service { get; set; }
+    //MoslemToolkit.Data.MateriPerKelasService MateriSvc;
+    //KelasService KelasSvc;
+    protected override async Task OnInitializedAsync()
+    {
+        //if (service == null) service = new NilaiSiswaService();
+        //if (KelasSvc == null) KelasSvc = new KelasService();
+        //if (MateriSvc == null) MateriSvc = new MateriPerKelasService();
+        Refresh();
+    }
+
+    public void Refresh()
+    {
+        if (TaskObject == null) return;
+        var dict = new Dictionary<long, NilaiSiswa>();
+        if (selectedSiswa != null)
+        {
+            //var selectedSiswa = service.GetDataByKelasMateri(Tanggal, TaskObject.Id);
+            selectedSiswa.ForEach(c => { dict.Add(c.JamaahId, c); });
+        }
+        var allNilaiSiswa = selKelas.Siswas.ToList();
+        DaftarNilai = new List<DataNilaiSiswa>();
+        foreach (var item in allNilaiSiswa)
+        {
+            DaftarNilai.Add(new DataNilaiSiswa() { Nama = item.Nama, Selected = dict.ContainsKey(item.Id), NilaiSiswaItem = dict.ContainsKey(item.Id) ? dict[item.Id] : new NilaiSiswa() { Hadir = true, JamaahId = item.Id, MateriPerKelasId = TaskObject.Id, Keterangan = "", KeteranganDari = UserName, Respon = "", ResponDari = "", Nilai = 0, Tanggal = Tanggal }, IsNew = !dict.ContainsKey(item.Id) });
+        }
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await jsRuntime.InvokeAsync<object>("TestDataTablesAdd", "#gridData2");
+
+        if (firstRender)
+        {
+            if (string.IsNullOrEmpty(UserName))
+            {
+                try
+                {
+                    UserName = await localStorage.GetItemAsync<string>(AppConstants.NameKey);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+
+            }
+        }
+    }
+    private async void HandleValidSubmit()
+    {
+        //var removed =
+        var materis = new List<Materi>();
+        var selected = DaftarNilai.Where(x => x.Selected).ToList();
+        for (int i = 0; i < selected.Count; i++)
+        {
+            selected[i].NilaiSiswaItem.Hadir = (selected[i].NilaiSiswaItem.Kehadiran == StatusKehadiran.Hadir);
+        }
+        selected.ForEach(x =>
+        {   
+            if (x.IsNew)
+                service.InsertData(x.NilaiSiswaItem);
+            else
+                service.UpdateData(x.NilaiSiswaItem);
+        });
+
+        await CloseTaskModal();
+        DataChanged?.Invoke();
+    }
+
+
+
+    private async Task CloseTaskModal()
+    {
+        await jsRuntime.InvokeAsync<object>("CloseModal", "taskModal");
+    }
+
+
+}

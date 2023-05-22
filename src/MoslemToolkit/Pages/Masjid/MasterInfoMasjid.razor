@@ -1,0 +1,192 @@
+@page "/master/InfoMasjid"
+
+@inject IJSRuntime jsRuntime
+@using Newtonsoft.Json
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject NavigationManager NavMgr
+@*@namespace MoslemToolkit.Pages.Master*@
+@inject IToastService toastService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@using System.IO
+<h1>Daftar Info Masjid</h1>
+
+<p>Gunakan halaman ini untuk mengatur Info Masjid.</p>
+
+@if (DataInfoMasjid == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <body onbeforeunload="TestDataTablesRemove('#gridData')">
+        <div class="table-responsive">
+            <table id="gridData" name="gridData" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Kode Masjid</th>
+                        <th>Keterangan</th>
+
+
+                        <th>Actions</th>
+                        <th>View</th>
+                    </tr>
+
+                </thead>
+                <tbody>
+                    @foreach (var item in DataInfoMasjid)
+                    {
+                    <tr>
+                        <td>@item.KodeMasjid</td>
+                        <td>
+                                @if (item.DataMasjid != null)
+                                {
+                                    var info = JsonConvert.DeserializeObject<InfoDetailMasjid>(item.DataMasjid);
+                                    <ul class="list-group">
+                                      <li class="list-group-item active">@info.NamaMasjid</li>
+                                      <li class="list-group-item">Lokasi: @info.Lokasi</li>
+                                      <li class="list-group-item">Imam: @info.Imam</li>
+                                      <li class="list-group-item">Muazin: @info.Muazin</li>
+                                      <li class="list-group-item">Khatib: @info.Khotib</li>
+                                    </ul>
+                                }
+                        </td>
+
+
+
+                        <td>
+                                @if (HasLogin)
+                                {
+                                    <input type="button" class="btn btn-primary" @onclick="(() => PrepareForEdit(item))" data-toggle="modal" data-target="#taskModal" value="Ubah" />
+                                    <input type="button" class="btn btn-danger" @onclick="(() => PrepareForDelete(item))" data-toggle="modal" data-target="#confirmDeleteModal" value="Hapus" />
+                                }
+
+                        </td>
+                        <td>
+                            <a href="@($"{AppConstants.JamMasjidUrl}/mosque1/{@item.KodeMasjid}")" class="btn btn-info">View 1</a>
+                            <a href="@($"{AppConstants.JamMasjidUrl}/mosque2/{@item.KodeMasjid}")" class="btn btn-info">View 2</a>
+                            <a href="@($"{AppConstants.JamMasjidUrl}/mosque3/{@item.KodeMasjid}")" class="btn btn-info">View 3</a>
+                        </td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </body>
+}
+@if (HasLogin)
+{
+    <div>
+        <input type="button" data-toggle="modal" data-target="#taskModal" class="btn btn-primary" value="Tambah Info Masjid" @onclick="(() => InitializeitemObject())" />
+    </div>
+}
+<ConfirmDialog OnClick="@Delete" />
+<InfoMasjidDetail @ref="detail" TaskObject=@itemObject DataChanged="@DataChanged">
+    <CustomHeader>@customHeader</CustomHeader>
+</InfoMasjidDetail>
+
+@code {
+    bool HasLogin = false;
+    InfoMasjidDetail detail;
+    MoslemToolkit.Data.InfoMasjidService service;
+    string customHeader = string.Empty;
+    List<InfoMasjid> DataInfoMasjid;
+    InfoMasjid itemObject = new InfoMasjid();
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    string UserName;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new InfoMasjidService();
+
+        DataInfoMasjid = service.GetAllData();
+
+
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (DataInfoMasjid != null && DataInfoMasjid.Count > 0)
+        {
+
+            await jsRuntime.InvokeAsync<object>("TestDataTablesAdd", "#gridData");
+        }
+        if (firstRender)
+        {
+            if (string.IsNullOrEmpty(UserName))
+            {
+                try
+                {
+                    UserName = await localStorage.GetItemAsync<string>(AppConstants.NameKey);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+                if (string.IsNullOrEmpty(UserName))
+                {
+                    NavMgr.NavigateTo($"/login");
+                }
+                 else if (!string.IsNullOrEmpty(UserName) && UserName == AppConstants.USER_ADMIN)
+                    {
+                        HasLogin = true;
+                        StateHasChanged();
+                    }
+            }
+        }
+    }
+
+    private void InitializeitemObject()
+    {
+
+        itemObject = new InfoMasjid();
+        itemObject.KodeMasjid = $"M-{service.GetAllData().Count()+1}";
+        detail.detail = new InfoDetailMasjid();
+      
+
+
+        //it    em    Object.Id = -1;
+
+        customHeader = "Tambah Info Masjid";
+    }
+    private async void DataChanged()
+    {
+        DataInfoMasjid = service.GetAllData();
+        StateHasChanged();
+    }
+
+    private void PrepareForEdit(InfoMasjid item)
+    {
+        customHeader = "Ubah Info Masjid";
+        itemObject = item;
+        detail.detail = JsonConvert.DeserializeObject<InfoDetailMasjid>(itemObject.DataMasjid);
+        //detail.Refresh();
+    }
+    private void PrepareForDelete(InfoMasjid item)
+    {
+        itemObject = item;
+    }
+    private void ClearChat(InfoMasjid item)
+    {
+        ChatMessageService svc = new ChatMessageService();
+        if (item != null)
+        {
+            svc.ClearChat(item.Id);
+        }
+    }
+    private async Task Delete()
+    {
+        var task = service.DeleteData(itemObject.Id);
+        await jsRuntime.InvokeAsync<object>("CloseModal", "confirmDeleteModal");
+        DataInfoMasjid = service.GetAllData();
+        itemObject = new InfoMasjid() { Id = -1 };
+    }
+
+    private async System.Threading.Tasks.Task applyPager(string TableName)
+    {
+        await jsRuntime.InvokeAsync<object>("applyPager", TableName);
+    }
+
+}

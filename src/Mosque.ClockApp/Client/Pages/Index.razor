@@ -1,0 +1,17 @@
+﻿@page "/"
+@page "/view/{index:int}"
+@inject NavigationManager NavMgr
+@inject IJSRuntime jsRuntime
+
+<p></p>
+
+@code {
+    [Parameter]
+    public int index { set; get; } = 1;
+    protected override async Task OnInitializedAsync()
+    {
+        if (index == 0) index = 1;
+        NavMgr.NavigateTo($"/mosque{index}");
+    }
+
+}

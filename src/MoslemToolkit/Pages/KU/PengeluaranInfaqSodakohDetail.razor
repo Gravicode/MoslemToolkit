@@ -1,0 +1,114 @@
+﻿@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject IJSRuntime jsRuntime
+@*@namespace MoslemToolkit.Pages.Master*@
+@using System.IO
+@inject IToastService toastService
+
+<div class="modal" tabindex="-1" role="dialog" id="taskModal">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@CustomHeader</h5>
+
+
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@TaskObject" OnValidSubmit="@HandleValidSubmit">
+                    <DataAnnotationsValidator />
+                    <div class="form-group">
+                        <label for="tgl">Tanggal</label>
+                        <InputDate id="tgl" class="form-control" @bind-Value="@TaskObject.Tanggal" />
+                        <ValidationMessage For="@(() => TaskObject.Tanggal)" />
+                    </div>
+
+                     <div class="form-group">
+                        <label for="akun">Akun Infaq Sodakoh</label>
+                        <select @bind="@TaskObject.AkunInfaqSodakohId" id="akun">
+                            <option value="-">Pilih</option>
+                            @if (dataAkun != null)
+                            {
+                                foreach(AkunInfaqSodakoh item in dataAkun)
+                                {
+                                  <option value="@item.Id">@item.Uraian</option>
+
+                                }
+                            }
+                        </select>
+                        <ValidationMessage For="@(() => TaskObject.AkunInfaqSodakohId)" />
+                    </div>
+                    <div class="form-group">
+                        <input type="hidden" @bind-value="@TaskObject.Id" />
+                        <label for="oleh">Dikeluarkan oleh</label>
+                         <InputText id="oleh" class="form-control" @bind-Value="@TaskObject.DikeluarkanOleh" />
+                         <ValidationMessage For="@(() => TaskObject.DikeluarkanOleh)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="keterangan">Keterangan</label>
+                        <InputTextArea id="keterangan" class="form-control" @bind-Value="@TaskObject.Keterangan" />
+                        <ValidationMessage For="@(() => TaskObject.Keterangan)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="jml">Jumlah Pengeluaran (Rp)</label>
+                        <InputNumber id="jml" class="form-control" @bind-Value="@TaskObject.Jumlah" />
+                        <ValidationMessage For="@(() => TaskObject.Jumlah)" />
+                    </div>
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    [Parameter]
+    public RenderFragment CustomHeader { get; set; }
+    [Parameter]
+    public PengeluaranInfaqSodakoh TaskObject { get; set; }
+    [Parameter]
+    public Action DataChanged { get; set; }
+    MoslemToolkit.Data.PengeluaranInfaqSodakohService service;
+    MoslemToolkit.Data.AkunInfaqSodakohService Akunsvc;
+    List<AkunInfaqSodakoh> dataAkun;
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new PengeluaranInfaqSodakohService();
+        if (Akunsvc  == null) Akunsvc = new  AkunInfaqSodakohService();
+        dataAkun = Akunsvc.GetAllData();
+
+    }
+    private async void HandleValidSubmit()
+    {
+
+        if(TaskObject.AkunInfaqSodakoh!=null)
+            TaskObject.NamaAkun = TaskObject.AkunInfaqSodakoh.Uraian;
+        if (TaskObject.Id == 0)
+        {
+
+            service.InsertData(TaskObject);
+
+        }
+        else
+        {
+            service.UpdateData(TaskObject);
+        }
+
+        await CloseTaskModal();
+        DataChanged?.Invoke();
+    }
+
+
+
+    private async Task CloseTaskModal()
+    {
+        await jsRuntime.InvokeAsync<object>("CloseModal", "taskModal");
+    }
+
+
+}

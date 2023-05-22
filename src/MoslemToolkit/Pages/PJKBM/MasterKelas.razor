@@ -1,0 +1,188 @@
+﻿@page "/master/Kelas"
+@layout MainLayoutPJKBM
+@inject IJSRuntime jsRuntime
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject NavigationManager NavMgr
+@*@namespace MoslemToolkit.Pages.Master*@
+@inject IToastService toastService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@using System.IO
+<h1>Daftar Kelas</h1>
+
+<p>Gunakan halaman ini untuk menyimpan daftar Kelas</p>
+
+@if (DataKelas == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <body onbeforeunload="TestDataTablesRemove('#gridData')">
+        <div class="table-responsive">
+            <table id="gridData" name="gridData" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Kelas</th>
+                        <th>Wali Kelas</th>
+                        <th>Kelompok</th>
+                        <th>Range Usia (tahun)</th>
+                        <th>Jumlah Siswa (orang)</th>
+                        <th>Actions</th>
+                    </tr>
+
+                </thead>
+                <tbody>
+                    @foreach (var item in DataKelas)
+                    {
+                    <tr>
+                        <td>@item.Nama</td>
+                        <td>@item.WaliKelas</td>
+                        <td>@item.Kelompok</td>
+                        <td>@item.MinUsia - @item.MaxUsia</td>
+                        <td>@(item.SiswaPerKelas?.Count())</td>
+                        <td>
+                            <input type="button" class="btn btn-primary mr-1 btn-sm mt-1" @onclick="(() => ManageSiswa(item))" value="Atur Siswa" />
+                            <input type="button" class="btn btn-success mr-1 btn-sm mt-1" @onclick="(() => Export(item))" value="Export Data Siswa" />
+
+                            @if(HasLogin){
+                            <input type="button" class="btn btn-primary btn-sm mt-1" @onclick="(() => PrepareForEdit(item))" data-toggle="modal" data-target="#taskModal" value="Ubah" />
+                            <input type="button" class="btn btn-danger btn-sm mt-1" @onclick="(() => PrepareForDelete(item))" data-toggle="modal" data-target="#confirmDeleteModal" value="Hapus" />
+                            }
+
+                        </td>
+
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </body>
+}
+@if (HasLogin)
+{
+    <div>
+        <input type="button" data-toggle="modal" data-target="#taskModal" class="btn btn-primary" value="Tambah Kelas" @onclick="(() => InitializeitemObject())" />
+    </div>
+}
+<ConfirmDialog OnClick="@Delete" />
+<KelasDetail @ref="detail" TaskObject=@itemObject DataChanged="@DataChanged">
+    <CustomHeader>@customHeader</CustomHeader>
+</KelasDetail>
+
+@code {
+    bool HasLogin;
+    KelasDetail detail;
+    MoslemToolkit.Data.KelasService service;
+    string customHeader = string.Empty;
+    List<Kelas> DataKelas;
+    Kelas itemObject = new Kelas();
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    string UserName;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new KelasService();
+
+        DataKelas = service.GetAllData();
+
+
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (DataKelas != null && DataKelas.Count > 0)
+        {
+
+            await jsRuntime.InvokeAsync<object>("TestDataTablesAdd", "#gridData");
+        }
+        if (firstRender)
+        {
+            if (string.IsNullOrEmpty(UserName))
+            {
+                try
+                {
+                    UserName = await localStorage.GetItemAsync<string>(AppConstants.NameKey);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+                if (string.IsNullOrEmpty(UserName))
+                {
+                    NavMgr.NavigateTo($"/login");
+                }
+                else
+                {
+
+                }
+            }
+            {
+                        HasLogin = RoleInfo.HasRole(UserName, Roles.Pengurus) || RoleInfo.HasRole(UserName, Roles.PJKBM);
+                        if (HasLogin)
+                StateHasChanged();
+            }
+        }
+    }
+
+    private void InitializeitemObject()
+    {
+
+        itemObject = new Kelas();
+        itemObject.Kelompok = "Cimanggu";
+     
+
+
+
+        //itemObject.Id = -1;
+
+        customHeader = "Tambah Kelas";
+    }
+    private async void DataChanged()
+    {
+        DataKelas = service.GetAllData();
+        StateHasChanged();
+    }
+
+    private void ManageSiswa(Kelas item)
+    {
+        NavMgr.NavigateTo($"/master/siswaperkelas/{item.Id}");
+    }
+    private void Export(Kelas item)
+    {
+        NavMgr.NavigateTo($"/master/cetak-data-siswa/{item.Id}");
+    }
+    private void PrepareForEdit(Kelas item)
+    {
+        customHeader = "Ubah Kelas";
+        itemObject = item;
+
+    }
+    private void PrepareForDelete(Kelas item)
+    {
+        itemObject = item;
+    }
+    private void ClearChat(Kelas item)
+    {
+        ChatMessageService svc = new ChatMessageService();
+        if (item != null)
+        {
+            svc.ClearChat(item.Id);
+        }
+    }
+    private async Task Delete()
+    {
+        var task = service.DeleteData(itemObject.Id);
+        await jsRuntime.InvokeAsync<object>("CloseModal", "confirmDeleteModal");
+        DataKelas = service.GetAllData();
+        itemObject = new Kelas() { Id = -1 };
+    }
+
+    private async System.Threading.Tasks.Task applyPager(string TableName)
+    {
+        await jsRuntime.InvokeAsync<object>("applyPager", TableName);
+    }
+
+}

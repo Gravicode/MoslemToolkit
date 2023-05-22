@@ -1,0 +1,203 @@
+﻿@page "/master/HeaderPenerimaanInfaqSodakoh"
+@layout MainLayoutKU
+@inject IJSRuntime jsRuntime
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject NavigationManager NavMgr
+@*@namespace MoslemToolkit.Pages.Master*@
+@inject IToastService toastService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@using System.IO
+<h1>Daftar Penerimaan Infaq Sodakoh</h1>
+
+<p>Gunakan halaman ini untuk menyimpan daftar Penerimaan Infaq Sodakoh</p>
+
+@if (DataHeaderPenerimaanInfaqSodakoh == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <body onbeforeunload="TestDataTablesRemove('#gridData')">
+        <div class="table-responsive">
+            <table id="gridData" name="gridData" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Tanggal</th>
+                        <th>Keterangan</th>
+                        <th>Penyetor</th>
+                        <th>Diterima Oleh</th>
+                        <th>Total (Rp)</th>
+                        <th>Actions</th>
+                    </tr>
+
+                </thead>
+                <tbody>
+                    @foreach (var item in DataHeaderPenerimaanInfaqSodakoh)
+                    {
+                    <tr>
+                        <td>@item.Tanggal.ToString("MM-dd-yyyy")</td>
+                        <td>@item.Keterangan</td>
+                        <td>@item.Penyetor</td>
+                        <td>@item.DiterimaOleh</td>
+                        <td>@item.Total.ToString("n2")</td>
+                        <td>
+                                @if (HasLogin)
+                                {
+                                    <input type="button" class="btn btn-primary btn-sm mt-1" @onclick="(() => PrepareForEdit(item))" data-toggle="modal" data-target="#taskModal" value="Ubah" />
+                                    <input type="button" class="btn btn-danger btn-sm mt-1" @onclick="(() => PrepareForDelete(item))" data-toggle="modal" data-target="#confirmDeleteModal" value="Hapus" />
+                                }
+                                else
+                                {
+                                    <p>-</p>
+                                }
+
+                        </td>
+
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </body>
+}
+@if (HasLogin)
+{
+    <div>
+        <input type="button" data-toggle="modal" data-target="#taskModal" class="btn btn-primary" value="Tambah Penerimaan Isrun" @onclick="(() => InitializeitemObject())" />
+        <input type="button" data-toggle="modal" data-target="#taskModal2" class="btn btn-primary" value="Tambah Penerimaan Non Isrun" @onclick="(() => InitializeitemObject2())" />
+    </div>
+}
+<ConfirmDialog OnClick="@Delete" />
+<HeaderPenerimaanInfaqSodakohDetail @ref="detail" TaskObject=@itemObject DataChanged="@DataChanged">
+    <CustomHeader>@customHeader</CustomHeader>
+</HeaderPenerimaanInfaqSodakohDetail>
+<HeaderPenerimaanInfaqSodakohDetail2 @ref="detail2" TaskObject=@itemObject2 DataChanged="@DataChanged">
+    <CustomHeader>@customHeader</CustomHeader>
+</HeaderPenerimaanInfaqSodakohDetail2>
+
+@code {
+    bool HasLogin;
+    HeaderPenerimaanInfaqSodakohDetail detail;
+    HeaderPenerimaanInfaqSodakohDetail2 detail2;
+    MoslemToolkit.Data.HeaderPenerimaanInfaqSodakohService service;
+    MoslemToolkit.Data.TimService Timservice;
+    string customHeader = string.Empty;
+    List<HeaderPenerimaanInfaqSodakoh> DataHeaderPenerimaanInfaqSodakoh;
+    HeaderPenerimaanInfaqSodakoh itemObject = new HeaderPenerimaanInfaqSodakoh();
+    HeaderPenerimaanInfaqSodakoh itemObject2 = new HeaderPenerimaanInfaqSodakoh();
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    string UserName;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new HeaderPenerimaanInfaqSodakohService();
+        if (Timservice == null) Timservice = new TimService();
+
+        DataHeaderPenerimaanInfaqSodakoh = service.GetAllData();
+
+
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (DataHeaderPenerimaanInfaqSodakoh != null && DataHeaderPenerimaanInfaqSodakoh.Count > 0)
+        {
+
+            await jsRuntime.InvokeAsync<object>("TestDataTablesAdd", "#gridData");
+        }
+        if (firstRender)
+        {
+            if (string.IsNullOrEmpty(UserName))
+            {
+                try
+                {
+                    UserName = await localStorage.GetItemAsync<string>(AppConstants.NameKey);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+                if (string.IsNullOrEmpty(UserName))
+                {
+                    NavMgr.NavigateTo($"/login");
+                }
+                else
+                {
+
+                }
+            }
+            if (!string.IsNullOrEmpty(UserName) && UserName == AppConstants.USER_KU)
+            {
+                HasLogin = true;
+                StateHasChanged();
+            }
+        }
+    }
+
+    private void InitializeitemObject()
+    {
+        var ku = Timservice.GetByDapukan("KU");
+        itemObject = new HeaderPenerimaanInfaqSodakoh();
+        itemObject.Tanggal = DateHelper.GetLocalTimeNow();
+        itemObject.DiterimaOleh = ku == null ? "KU" : ku.Nama;
+        itemObject.Keterangan = "Infaq (isrun)";
+        detail.Refresh(0);
+
+        //itemObject.Id = -1;
+
+        customHeader = "Tambah Penerimaan Infaq Sodakoh";
+    }
+    private void InitializeitemObject2()
+    {
+        var ku = Timservice.GetByDapukan("KU");
+        itemObject2 = new HeaderPenerimaanInfaqSodakoh();
+        itemObject2.Tanggal = DateHelper.GetLocalTimeNow();
+        itemObject2.DiterimaOleh = ku == null ? "KU" : ku.Nama;
+        itemObject2.Keterangan = "Sodakoh (non isrun)";
+        detail2.Refresh(0);
+
+        //itemObject.Id = -1;
+
+        customHeader = "Tambah Penerimaan Infaq Sodakoh (Non Isrun)";
+    }
+    private async void DataChanged()
+    {
+        DataHeaderPenerimaanInfaqSodakoh = service.GetAllData();
+        StateHasChanged();
+    }
+
+    private void PrepareForEdit(HeaderPenerimaanInfaqSodakoh item)
+    {
+        customHeader = "Ubah Penerimaan Infaq Sodakoh";
+        itemObject = item;
+        detail.Refresh(item.Id);
+    }
+    private void PrepareForDelete(HeaderPenerimaanInfaqSodakoh item)
+    {
+        itemObject = item;
+    }
+    private void ClearChat(HeaderPenerimaanInfaqSodakoh item)
+    {
+        ChatMessageService svc = new ChatMessageService();
+        if (item != null)
+        {
+            svc.ClearChat(item.Id);
+        }
+    }
+    private async Task Delete()
+    {
+        var task = service.DeleteData(itemObject.Id);
+        await jsRuntime.InvokeAsync<object>("CloseModal", "confirmDeleteModal");
+        DataHeaderPenerimaanInfaqSodakoh = service.GetAllData();
+        itemObject = new HeaderPenerimaanInfaqSodakoh() { Id = -1 };
+    }
+
+    private async System.Threading.Tasks.Task applyPager(string TableName)
+    {
+        await jsRuntime.InvokeAsync<object>("applyPager", TableName);
+    }
+
+}

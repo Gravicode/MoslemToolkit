@@ -1,0 +1,173 @@
+﻿@page "/master/Sodakoh"
+
+@inject IJSRuntime jsRuntime
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject NavigationManager NavMgr
+@*@namespace MoslemToolkit.Pages.Master*@
+@inject IToastService toastService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+
+@using System.IO
+<h1>Informasi Sodakoh Kelompok</h1>
+
+<p>Gunakan halaman ini untuk menyimpan informasi tujuan sodakoh.</p>
+
+@if (DataSodakoh == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <body onbeforeunload="TestDataTablesRemove('#gridData')">
+        <div class="table-responsive">
+            <table id="gridData" name="gridData" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Kategori</th>
+                        <th>Nama Bank</th>
+                        <th>No Rekening</th>
+
+                        <th>Nama Rekening</th>
+                        <th>Nama Gopay</th>
+                        <th>Nomor Gopay</th>
+                        <th>Gopay QR</th>
+                        <th>Actions</th>
+                    </tr>
+
+                </thead>
+                <tbody>
+                    @foreach (var item in DataSodakoh)
+                    {
+                        <tr>
+                            <td>@item.Kategori</td>
+                            <td>@item.NamaBank</td>
+                            <td>@item.NoRekening</td>
+                            <td>@item.NamaRekening</td>
+                            <td>@item.NamaGopay</td>
+                            <td>@item.NomorGopay</td>
+                            <td><img width="300" src="@item.GopayQRUrl" alt="QR" /></td>
+                            <td>
+                               
+                                @if (HasLogin)
+                                {
+                                    <input type="button" class="btn btn-primary" @onclick="(() => PrepareForEdit(item))" data-toggle="modal" data-target="#taskModal" value="Ubah" />
+                                    <input type="button" class="btn btn-danger" @onclick="(() => PrepareForDelete(item))" data-toggle="modal" data-target="#confirmDeleteModal" value="Hapus" />
+                                }
+                            </td>
+
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </body>
+}
+@if (HasLogin)
+{
+    <div>
+        <input type="button" data-toggle="modal" data-target="#taskModal" class="btn btn-primary" value="Tambah Sodakoh" @onclick="(() => InitializeitemObject())" />
+    </div>
+}
+<ConfirmDialog OnClick="@Delete" />
+<SodakohDetail @ref="detail" TaskObject=@itemObject DataChanged="@DataChanged">
+    <CustomHeader>@customHeader</CustomHeader>
+</SodakohDetail>
+
+@code {
+    bool HasLogin = false;
+    SodakohDetail detail;
+    MoslemToolkit.Data.SodakohService service;
+    string customHeader = string.Empty;
+    List<Sodakoh> DataSodakoh;
+    Sodakoh itemObject = new Sodakoh();
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    string UserName;
+ 
+   
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new SodakohService();
+
+        DataSodakoh = service.GetAllData();
+
+
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (DataSodakoh != null && DataSodakoh.Count > 0)
+        {
+
+            await jsRuntime.InvokeAsync<object>("TestDataTablesAdd", "#gridData");
+        }
+        if (firstRender)
+        {
+            if (string.IsNullOrEmpty(UserName))
+            {
+                try
+                {
+                    UserName = await localStorage.GetItemAsync<string>(AppConstants.NameKey);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+                if (string.IsNullOrEmpty(UserName))
+                {
+                    NavMgr.NavigateTo($"/login");
+                }
+                else if (!string.IsNullOrEmpty(UserName) && UserName == AppConstants.USER_ADMIN)
+                {
+                    HasLogin = true;
+                    StateHasChanged();
+                }
+            }
+        }
+    }
+
+    private void InitializeitemObject()
+    {
+
+        itemObject = new Sodakoh();
+        itemObject.Kategori = "Sodakoh";
+      
+
+        detail.FileUrl = "";
+
+        //itemObject.Id = -1;
+
+        customHeader = "Tambah Info Sodakoh";
+    }
+    private async void DataChanged()
+    {
+        DataSodakoh = service.GetAllData();
+        StateHasChanged();
+    }
+
+    private void PrepareForEdit(Sodakoh item)
+    {
+        customHeader = "Ubah Sodakoh";
+        itemObject = item;
+        detail.FileUrl = item.GopayQRUrl;
+    }
+    private void PrepareForDelete(Sodakoh item)
+    {
+        itemObject = item;
+    }
+    private async Task Delete()
+    {
+        var task = service.DeleteData(itemObject.Id);
+        await jsRuntime.InvokeAsync<object>("CloseModal", "confirmDeleteModal");
+        DataSodakoh = service.GetAllData();
+        itemObject = new Sodakoh() { Id = -1 };
+    }
+
+    private async System.Threading.Tasks.Task applyPager(string TableName)
+    {
+        await jsRuntime.InvokeAsync<object>("applyPager", TableName);
+    }
+
+}

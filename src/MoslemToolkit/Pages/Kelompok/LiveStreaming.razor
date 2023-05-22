@@ -1,0 +1,63 @@
+﻿@page "/live-streaming"
+@page "/live-streaming/{index:long}"
+@using MoslemToolkit.Models
+@inject NavigationManager Nav
+    <div class="row">
+        <div class="col-12">
+            @if (EmbedData != null)
+            {
+                <h3>Live Streaming - @EmbedData.Nama</h3>
+                <p>@EmbedData.Tanggal.ToString("dd/MMM/yyyy HH:mm"), @EmbedData.Keterangan</p>
+                @((MarkupString)EmbedData.EmbedHTML)
+            }
+            else
+            {
+                <h3>No Video Streaming Now</h3>
+            }
+        </div>
+    </div>
+<div class="row">
+    <div class="col-12">
+        <ChatBox @ref="Chat1"></ChatBox>
+    </div>
+</div>
+<div class="row">
+    <div class="col-12">
+        <button class="btn btn-primary" @onclick="Back">Kembali</button>
+    </div>
+</div>
+
+@code {
+    ChatBox Chat1;
+    [Parameter] public long index { get; set; }
+    public VideoStream EmbedData { get; set; }
+    public VideoStreamService service { get; set; }
+    void Back()
+    {
+        Nav.NavigateTo("/");
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new VideoStreamService();
+
+        if (index > 0)
+        {
+
+            var selItem = service.GetDataById(index);
+            if (selItem != null)
+                EmbedData = selItem;
+            //StateHasChanged();
+        }
+
+
+
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            if (Chat1 != null && index > 0)
+                Chat1.SetThreadId(index);
+        }
+    }
+}

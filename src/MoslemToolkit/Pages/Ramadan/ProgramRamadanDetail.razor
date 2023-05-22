@@ -1,0 +1,119 @@
+﻿@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject IJSRuntime jsRuntime
+@*@namespace MoslemToolkit.Pages.Master*@
+@using System.IO
+@inject IToastService toastService
+
+<div class="modal" tabindex="-1" role="dialog" id="taskModal">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@CustomHeader</h5>
+
+
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@TaskObject" OnValidSubmit="@HandleValidSubmit">
+                    <DataAnnotationsValidator />
+
+                    <div class="form-group">
+                        <label for="nama">Nama</label>
+                        <input type="hidden" @bind-value="@TaskObject.Id" />
+                        <InputText id="nama" class="form-control" @bind-Value="@TaskObject.Nama" />
+                        <ValidationMessage For="@(() => TaskObject.Nama)" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tanggal">Tanggal Update</label>
+                        <InputDate id="tanggal" class="form-control" @bind-Value="@TaskObject.TanggalUpdate" />
+                        <ValidationMessage For="@(() => TaskObject.TanggalUpdate)" />
+                    </div>
+                    <div class="form-group">
+
+                        <p class="font-weight-bold">Pencapaian</p>
+                        <div class="ex3">
+                            @if (TaskObject.TargetPrograms != null)
+                            {
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item">
+                                        @{var counter = 0; }
+                                        @foreach (var item in TaskObject.TargetPrograms)
+                                        {
+                                            counter++;
+                                            <!-- Default checked -->
+                                            <div class="custom-control custom-checkbox">
+                                                <input type="checkbox" class="custom-control-input" id="@("chk"+counter)" @bind="@item.Sukses">
+                                                <label class="custom-control-label" for="@("chk"+counter)">@item.Nama</label>
+                                            </div>
+                                        }
+
+                                    </li>
+                                </ul>
+                            }
+
+                        </div>
+                        </div>
+                       
+
+
+
+
+                        <button type="submit" class="btn btn-primary">Simpan</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+</EditForm>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    public string FileUrl { get; set; }
+    [Parameter]
+    public RenderFragment CustomHeader { get; set; }
+    [Parameter]
+    public ProgramRamadan TaskObject { get; set; }
+    [Parameter]
+    public Action DataChanged { get; set; }
+    MoslemToolkit.Data.ProgramRamadanService service;
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new ProgramRamadanService();
+
+    }
+    private async void HandleValidSubmit()
+    {
+
+
+        if (TaskObject.Id == 0)
+        {
+            if(service.IsUserExist(TaskObject.Nama)){
+                toastService.ShowError("Nama sudah pernah dimasukan sebelumnya, cukup ubah data sebelumnya.");
+                return;
+            }else
+            service.InsertData(TaskObject);
+
+        }
+        else
+        {
+            service.UpdateData(TaskObject);
+        }
+
+        await CloseTaskModal();
+        DataChanged?.Invoke();
+    }
+
+
+
+    private async Task CloseTaskModal()
+    {
+        await jsRuntime.InvokeAsync<object>("CloseModal", "taskModal");
+    }
+
+
+}

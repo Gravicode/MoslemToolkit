@@ -1,0 +1,119 @@
+﻿@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject IJSRuntime jsRuntime
+@*@namespace MoslemToolkit.Pages.Master*@
+@using System.IO
+@inject IToastService toastService
+
+<div class="modal" tabindex="-1" role="dialog" id="taskModal">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@CustomHeader</h5>
+
+
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@TaskObject" OnValidSubmit="@HandleValidSubmit">
+                    <DataAnnotationsValidator />
+
+                    <div class="form-group">
+                        <label for="no">No</label>
+                        <input type="hidden" @bind-value="@TaskObject.Id" />
+                        <InputNumber id="no" class="form-control" @bind-Value="@TaskObject.No" />
+                        <ValidationMessage For="@(() => TaskObject.No)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="Bab">Bab</label>
+                        <select @onchange="selectBab" value="@TaskObject.Bab?.Id" id="bab">
+                            <option value="-">Pilih</option>
+                            @if(daftarBab !=null)
+                            @foreach (Bab item in daftarBab)
+                            {
+                                <option value="@item.Id">@item.Nama.ToString()</option>
+
+                            }
+                        </select>
+                        <ValidationMessage For="@(() => TaskObject.Bab)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="Materi">Nama Materi</label>
+                        <InputText id="Materi" class="form-control" @bind-Value="@TaskObject.Nama" />
+                        <ValidationMessage For="@(() => TaskObject.Nama)" />
+                    </div>
+                     <div class="form-group">
+                        <label for="ket">Keterangan</label>
+                        <InputTextArea id="ket" class="form-control" @bind-Value="@TaskObject.Keterangan" />
+                        <ValidationMessage For="@(() => TaskObject.Keterangan)" />
+                    </div>
+
+
+
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    public List<Bab> daftarBab;
+    public string FileUrl { get; set; }
+    [Parameter]
+    public RenderFragment CustomHeader { get; set; }
+    [Parameter]
+    public Materi TaskObject { get; set; }
+    [Parameter]
+    public Action DataChanged { get; set; }
+    MoslemToolkit.Data.MateriService service;
+    BabService svc;
+    void selectBab(ChangeEventArgs e)
+    {
+        var selectedString = e.Value.ToString();
+        var bab = svc.GetDataById(long.Parse(selectedString));
+        TaskObject.Bab = bab;
+        TaskObject.BabId = bab.Id;
+        Console.WriteLine("It is definitely: " + selectedString);
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new MateriService();
+        if(daftarBab == null){
+            svc = new BabService();
+            daftarBab = svc.GetAllData();
+        }
+
+    }
+    private async void HandleValidSubmit()
+    {
+
+
+        if (TaskObject.Id == 0)
+        {
+            TaskObject.Bab = null;
+            service.InsertData(TaskObject);
+
+        }
+        else
+        {
+            service.UpdateData(TaskObject);
+        }
+
+        await CloseTaskModal();
+        DataChanged?.Invoke();
+    }
+
+
+
+    private async Task CloseTaskModal()
+    {
+        await jsRuntime.InvokeAsync<object>("CloseModal", "taskModal");
+    }
+
+
+}

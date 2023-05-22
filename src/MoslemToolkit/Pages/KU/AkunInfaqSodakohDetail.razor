@@ -1,0 +1,145 @@
+﻿@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject IJSRuntime jsRuntime
+@*@namespace MoslemToolkit.Pages.Master*@
+@using System.IO
+@inject IToastService toastService
+
+<div class="modal" tabindex="-1" role="dialog" id="taskModal">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@CustomHeader</h5>
+
+
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@TaskObject" OnValidSubmit="@HandleValidSubmit">
+                    <DataAnnotationsValidator />
+                    <div class="form-group">
+                        <label for="no">No</label>
+                        <InputNumber id="no" class="form-control" @bind-Value="@TaskObject.No" />
+                        <ValidationMessage For="@(() => TaskObject.No)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="uraian">Uraian</label>
+                        <input type="hidden" @bind-value="@TaskObject.Id" />
+                        <InputText id="uraian" class="form-control" @bind-Value="@TaskObject.Uraian" />
+                        <ValidationMessage For="@(() => TaskObject.Uraian)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="keterangan">Keterangan</label>
+                        <InputTextArea id="keterangan" class="form-control" @bind-Value="@TaskObject.Keterangan" />
+                        <ValidationMessage For="@(() => TaskObject.Keterangan)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="tipe">Tipe</label>
+                        <select @bind="@TaskObject.Tipe" id="tipe">
+                            <option value="-">Pilih</option>
+                            @foreach (TipeAkunSodakoh item in Enum.GetValues(typeof(TipeAkunSodakoh)))
+                            {
+                                <option value="@item">@item.ToString()</option>
+
+                            }
+                        </select>
+                        <ValidationMessage For="@(() => TaskObject.Tipe)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="level">Level Wilayah</label>
+                        <select @bind="@TaskObject.Level" id="level">
+                            <option value="-">Pilih</option>
+                            @foreach (LevelWilayah item in Enum.GetValues(typeof(LevelWilayah)))
+                            {
+                                <option value="@item">@item.ToString()</option>
+
+                            }
+                        </select>
+                        <ValidationMessage For="@(() => TaskObject.Level)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="neraca">Grup Neraca</label>
+                        <select @bind="@TaskObject.Grup" id="neraca">
+                            <option value="-">Pilih</option>
+                            @foreach (GrupNeraca item in Enum.GetValues(typeof(GrupNeraca)))
+                            {
+                                <option value="@item">@item.ToString()</option>
+
+                            }
+                        </select>
+                        <ValidationMessage For="@(() => TaskObject.Grup)" />
+                    </div>
+                     <div class="form-group">
+                        <label for="rutin">Disetor Rutin</label>
+                        <input type="checkbox" @bind="TaskObject.Rutin">
+                        <ValidationMessage For="@(() => TaskObject.Rutin)" />
+                    </div> 
+                    <div class="form-group">
+                        <label for="masukisrun">Masuk ke Isrun</label>
+                        <input type="checkbox" @bind="TaskObject.MasukKeIsrun">
+                        <ValidationMessage For="@(() => TaskObject.MasukKeIsrun)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="target">Target Jatahan</label>
+                        <InputNumber id="target" class="form-control" @bind-Value="@TaskObject.TargetJatahan" />
+                        <ValidationMessage For="@(() => TaskObject.TargetJatahan)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="persen">Persen dari Setoran (%)</label>
+                        <InputNumber id="persen" class="form-control" @bind-Value="@TaskObject.PersenDariSetoran" />
+                        <ValidationMessage For="@(() => TaskObject.PersenDariSetoran)" />
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm mt-1">Simpan</button>
+                    <button type="button" class="btn btn-secondary btn-sm mt-1" data-dismiss="modal">Cancel</button>
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    public string FileUrl { get; set; }
+    [Parameter]
+    public RenderFragment CustomHeader { get; set; }
+    [Parameter]
+    public AkunInfaqSodakoh TaskObject { get; set; }
+    [Parameter]
+    public Action DataChanged { get; set; }
+    MoslemToolkit.Data.AkunInfaqSodakohService service;
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new AkunInfaqSodakohService();
+
+    }
+    private async void HandleValidSubmit()
+    {
+
+
+        if (TaskObject.Id == 0)
+        {
+
+            service.InsertData(TaskObject);
+
+        }
+        else
+        {
+            service.UpdateData(TaskObject);
+        }
+
+        await CloseTaskModal();
+        DataChanged?.Invoke();
+    }
+
+
+
+    private async Task CloseTaskModal()
+    {
+        await jsRuntime.InvokeAsync<object>("CloseModal", "taskModal");
+    }
+
+
+}

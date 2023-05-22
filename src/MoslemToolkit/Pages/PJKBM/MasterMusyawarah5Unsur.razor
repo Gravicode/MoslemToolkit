@@ -1,0 +1,199 @@
+﻿@page "/master/Musyawarah5Unsur"
+
+@inject IJSRuntime jsRuntime
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@layout MainLayoutPJKBM
+@inject NavigationManager NavMgr
+@*@namespace MoslemToolkit.Pages.Master*@
+@inject IToastService toastService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+
+@using System.IO
+<h1>Hasil Musyawarah 5 Unsur Kelompok</h1>
+
+<p>Gunakan halaman ini untuk menyimpan hasil Musyawarah 5 Unsur kelompok.</p>
+
+@if (DataMusyawarah5Unsur == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <body onbeforeunload="TestDataTablesRemove('#gridData')">
+        <div class="table-responsive">
+            <table id="gridData" name="gridData" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Tanggal</th>
+
+                        <th>Nama</th>
+                        <th>Keterangan</th>
+                     
+                        <th>Dibuat Oleh</th>
+                        <th>Actions</th>
+                    </tr>
+
+                </thead>
+                <tbody>
+                    @foreach (var item in DataMusyawarah5Unsur)
+                    {
+                        <tr>
+                            <td>@item.Tanggal.ToString("dd/MMM/yyyy HH:mm")</td>
+                            <td>@item.Nama</td>
+                            <td>@item.Keterangan</td>
+                            <td>@item.CreatedBy</td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(item.DocumentUrl))
+                                {
+                                    <a class="btn btn-primary mr-1 btn-sm mt-1" href="@item.DocumentUrl">Lihat</a>
+                                }
+                                @if (HasLogin)
+                                {
+                                    <input type="button" class="btn btn-primary btn-sm mt-1" @onclick="(() => PrepareForEdit(item))" data-toggle="modal" data-target="#taskModal" value="Ubah" />
+                                    <input type="button" class="btn btn-danger btn-sm mt-1" @onclick="(() => PrepareForDelete(item))" data-toggle="modal" data-target="#confirmDeleteModal" value="Hapus" />
+                                }
+                            </td>
+
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </body>
+}
+@if (HasLogin)
+{
+    <div>
+        <input type="button" data-toggle="modal" data-target="#taskModal" class="btn btn-primary" value="Tambah Hasil Musyawarah" @onclick="(() => InitializeitemObject())" />
+    </div>
+}
+<ConfirmDialog OnClick="@Delete" />
+<Musyawarah5UnsurDetail @ref="detail" TaskObject=@itemObject DataChanged="@DataChanged">
+    <CustomHeader>@customHeader</CustomHeader>
+</Musyawarah5UnsurDetail>
+
+@code {
+    bool HasLogin = false;
+    Musyawarah5UnsurDetail detail;
+    MoslemToolkit.Data.Musyawarah5UnsurService service;
+    string customHeader = string.Empty;
+    List<Musyawarah5Unsur> DataMusyawarah5Unsur;
+    Musyawarah5Unsur itemObject = new Musyawarah5Unsur();
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    string UserName;
+   
+    async Task DownloadFile(string Url)
+    {
+        if (!string.IsNullOrEmpty(Url))
+        {
+            NavMgr.NavigateTo(Url, true);
+        }
+        else
+        {
+            toastService.ShowError("Url kosong atau tidak valid.");
+        }
+        /*
+        if (!string.IsNullOrEmpty(Url))
+        {
+            HttpClient client = new HttpClient();
+            var res = await client.GetAsync(Url);
+            var Fname = Path.GetFileName(Url);
+            if (res.IsSuccessStatusCode)
+            {
+                var bytes = await res.Content.ReadAsByteArrayAsync();
+                await FileUtil.SaveAs(jsRuntime, Fname, bytes);
+            }
+
+        }
+        else
+        {
+            toastService.ShowError("Gagal mendownload file, terjadi kesalahan.");
+        */
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new Musyawarah5UnsurService();
+
+        DataMusyawarah5Unsur = service.GetAllData();
+
+
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (DataMusyawarah5Unsur != null && DataMusyawarah5Unsur.Count > 0)
+        {
+
+            await jsRuntime.InvokeAsync<object>("TestDataTablesAdd", "#gridData");
+        }
+        if (firstRender)
+        {
+            if (string.IsNullOrEmpty(UserName))
+            {
+                try
+                {
+                    UserName = await localStorage.GetItemAsync<string>(AppConstants.NameKey);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+                if (string.IsNullOrEmpty(UserName))
+                {
+                    NavMgr.NavigateTo($"/login");
+                }
+                else {
+                        HasLogin = RoleInfo.HasRole(UserName, Roles.Pengurus) || RoleInfo.HasRole(UserName, Roles.PJKBM);
+                        if (HasLogin)
+                    StateHasChanged();
+                }
+            }
+        }
+    }
+
+    private void InitializeitemObject()
+    {
+
+        itemObject = new Musyawarah5Unsur();
+        itemObject.CreatedBy = UserName;
+        itemObject.Tanggal = DateHelper.GetLocalTimeNow();
+
+        //detail.DocumentUrl = "";
+
+        //itemObject.Id = -1;
+
+        customHeader = "Tambah Hasil Musyawarah";
+    }
+    private async void DataChanged()
+    {
+        DataMusyawarah5Unsur = service.GetAllData();
+        StateHasChanged();
+    }
+
+    private void PrepareForEdit(Musyawarah5Unsur item)
+    {
+        customHeader = "Ubah Hasil Musyawarah";
+        itemObject = item;
+        //detail.DocumentUrl = item.DocumentUrl;
+    }
+    private void PrepareForDelete(Musyawarah5Unsur item)
+    {
+        itemObject = item;
+    }
+    private async Task Delete()
+    {
+        var task = service.DeleteData(itemObject.Id);
+        await jsRuntime.InvokeAsync<object>("CloseModal", "confirmDeleteModal");
+        DataMusyawarah5Unsur = service.GetAllData();
+        itemObject = new Musyawarah5Unsur() { Id = -1 };
+    }
+
+    private async System.Threading.Tasks.Task applyPager(string TableName)
+    {
+        await jsRuntime.InvokeAsync<object>("applyPager", TableName);
+    }
+
+}

@@ -1,0 +1,115 @@
+﻿@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@inject IJSRuntime jsRuntime
+
+<li class="nav-item">
+    <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
+       aria-expanded="true" aria-controls="collapseTwo">
+        <i class="fas fa-fw fa-database"></i>
+        <span>Data</span>
+    </a>
+    <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+        <div class="bg-white py-2 collapse-inner rounded">
+            <h6 class="collapse-header">Sering Diakses:</h6>
+            <a class="collapse-item" href="/master/bab">Bab</a>
+            <a class="collapse-item" href="/master/materi">Materi</a>
+            <a class="collapse-item" href="/master/kelas">Kelas</a>
+            <a class="collapse-item" href="/master/materiperkelas">Materi Per Kelas</a>
+            <a class="collapse-item" href="/master/TargetPerKelas">Target Per Kelas</a>
+            <a class="collapse-item" href="/master/ProgramSemester">Program Semester</a>
+            <a class="collapse-item" href="/master/KalenderPendidikan">Kalender Pendidikan</a>
+        </div>
+    </div>
+</li>
+
+<li class="nav-item">
+    <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#menu1"
+       aria-expanded="true" aria-controls="menu1">
+        <i class="fas fa-fw fa-sticky-note"></i>
+        <span>Aktivitas</span>
+    </a>
+    <div id="menu1" class="collapse" aria-labelledby="headingmenu1"
+         data-parent="#accordionSidebar">
+        <div class="bg-white py-2 collapse-inner rounded">
+            <h6 class="collapse-header">Pilih:</h6>
+            <a class="collapse-item" href="/master/anekdot">Anekdot</a>
+            <a class="collapse-item" href="/master/nilaisiswa">Penilaian dan Absen Harian</a>
+            <a class="collapse-item" href="/master/EvaluasiKelas">Evaluasi Akhir Kelas</a>
+        </div>
+    </div>
+</li>
+<li class="nav-item">
+    <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#menu2"
+       aria-expanded="true" aria-controls="menu2">
+        <i class="fas fa-fw fa-file-excel"></i>
+        <span>Laporan</span>
+    </a>
+    <div id="menu2" class="collapse" aria-labelledby="headingmenu2"
+         data-parent="#accordionSidebar">
+        <div class="bg-white py-2 collapse-inner rounded">
+            <h6 class="collapse-header">Pilih:</h6>
+            <a class="collapse-item" href="/master/laporan-pjkbm">Laporan PJKBM</a>
+            <a class="collapse-item" href="/master/laporan-pencapaian-pjkbm">Laporan Pencapaian PJKBM</a>
+            <a class="collapse-item" href="/report/laporan-bulanan">Laporan Bulanan</a>
+            <a class="collapse-item" href="/master/report-buku">Cetak Buku</a>
+
+        </div>
+    </div>
+</li>
+
+<li class="nav-item">
+    <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#menu3"
+       aria-expanded="true" aria-controls="menu3">
+        <i class="fas fa-fw fa-database"></i>
+        <span>Evaluasi</span>
+    </a>
+    <div id="menu3" class="collapse" aria-labelledby="headingmenu3"
+         data-parent="#accordionSidebar">
+        <div class="bg-white py-2 collapse-inner rounded">
+            <h6 class="collapse-header">Pilih:</h6>
+            <a class="collapse-item" href="/master/Musyawarah5Unsur">Hasil Musyawarah</a>
+            <a class="collapse-item" href="https://forms.gle/sMASBcQRXYtBboza6">Saran dan Masukan</a>
+         
+        </div>
+    </div>
+</li>
+
+@code {
+    bool collapseNavMenu = true;
+    bool HasLogin = false;
+    string NavMenuCssClass => (collapseNavMenu ? "collapse" : "");
+    string UserName { set; get; }
+    void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                UserName = await localStorage.GetItemAsync<string>(AppConstants.NameKey);
+
+            }
+            catch
+            {
+
+            }
+
+            if (!string.IsNullOrEmpty(UserName) && UserName == AppConstants.USER_ADMIN)
+            {
+                HasLogin = true;
+                StateHasChanged();
+            }
+
+        }
+
+        //await jsRuntime.InvokeAsync<object>("setMenuStyle");
+    }
+}

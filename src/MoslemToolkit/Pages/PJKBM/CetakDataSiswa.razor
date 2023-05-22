@@ -1,0 +1,101 @@
+﻿@page "/master/cetak-data-siswa"
+@page "/master/cetak-data-siswa/{kelasid:long}"
+
+@layout MainLayoutPJKBM
+
+@using System.IO
+@using MoslemToolkit.Helpers
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@using System.Data
+@inject IToastService toastService
+@inject IJSRuntime jsRuntime
+
+<h2>Cetak Data Siswa</h2>
+ <hr />
+    <div class="row">
+        <div class="col col-12">           
+            <div class="form-group">
+                <label for="kelas" class="col-sm-2 col-form-label">Kelas</label>
+                <div class="col-sm-11">
+                    @if (DataKelas != null)
+                {
+                    <select @bind="kelasid">
+                        <option value="-1">Pilih</option>
+                        @foreach (var template in DataKelas)
+                        {
+                            <option value=@template.Id>@template.Nama</option>
+                        }
+                    </select>
+                }
+                </div>
+            </div>
+
+            <button @onclick="RefreshData" class="btn btn-info">Refresh</button>
+            <button @onclick="CetakExcel" class="btn btn-success">Cetak Excel</button>
+            <button @onclick="CetakImage" class="btn btn-primary">Cetak Gambar</button>
+            
+        </div>
+
+    </div>
+@if (DataSiswa != null)
+{
+    <div class="table-responsive mt-1">
+        <table id="data-siswa" style="background-color:white;" class="table table-striped w-auto">
+            <thead>
+                <tr>
+                    <th>Nama</th>
+                    <th>Tgl Lahir</th>
+                    <th>Alamat</th>
+                    <th>Telepon</th>
+                    <th>Email</th>
+                    <th>Posisi</th>
+                    <th>Status</th>
+                    <th>Kelamin</th>
+                    <th>KK</th>
+                    <th>Gol.</th>
+                    <th>Foto</th>
+                </tr>
+
+            </thead>
+            <tbody>
+                @foreach (var item in DataSiswa)
+                {
+                    <tr>
+                        <td>@item.Nama</td>
+                        <td>@item.TanggalLahir?.ToString("dd/MMM/yyyy HH:mm")</td>
+                        <td>@item.Alamat?.ToString()</td>
+                        <td>@item.Telepon?.ToString()</td>
+                        <td>@item.Email?.ToString()</td>
+                        <td>@item.Posisi.ToString()</td>
+                        <td>@item.Status.ToString()</td>
+                        <td>@item.Kelamin.ToString()</td>
+                        <td>@item.KK?.ToString()</td>
+                        <td>@item.Gol?.ToString()</td>
+
+
+                        <td>@if (!string.IsNullOrEmpty(item.PhotoUrl))
+                            {
+
+                                var embed = ImageHelper.GetImageAsBase64Url(item.PhotoUrl);
+                                //var strHtml = $"<img src='{embed}' width='100' alt='foto'/>";
+
+                                <img src='@embed' width='100' alt='foto'/>
+                            }
+                            else
+                            {
+                                <p>tidak ada</p>
+                            }
+                        </td>
+                       
+                    </tr>
+                }
+                
+            </tbody>
+        </table>
+      
+        </div>
+}
+
+
+

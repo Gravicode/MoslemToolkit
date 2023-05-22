@@ -1,0 +1,164 @@
+﻿@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject IJSRuntime jsRuntime
+@*@namespace MoslemToolkit.Pages.Master*@
+@using System.IO
+@inject IToastService toastService
+@inject AzureBlobHelper blob;
+
+<div class="modal" tabindex="-1" role="dialog" id="taskModal">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@CustomHeader</h5>
+
+              
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@TaskObject" OnValidSubmit="@HandleValidSubmit">
+                    <DataAnnotationsValidator />
+                    <div class="form-group">
+                        <label for="tanggal">Tanggal Mulai</label>
+                        <InputDate id="tanggal" class="form-control" @bind-Value="@TaskObject.TglMulai" />
+                        <ValidationMessage For="@(() => TaskObject.TglMulai)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="tanggal2">Tanggal Selesai</label>
+                        <InputDate id="tanggal2" class="form-control" @bind-Value="@TaskObject.TglSelesai" />
+                        <ValidationMessage For="@(() => TaskObject.TglSelesai)" />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tahun">Tahun</label>
+                        <input type="hidden" @bind-value="@TaskObject.Id" />
+                        <InputNumber id="tahun" class="form-control" @bind-Value="@TaskObject.Tahun" />
+                        <ValidationMessage For="@(() => TaskObject.Tahun)" />
+                    </div>
+                   
+
+                    <div class="form-group">
+                        <label for="nim">Upload Gambar Tugas Panitia</label>
+                        @if (!string.IsNullOrEmpty(PanitiaFileUrl))
+                        {
+                            <div class="alert alert-info"> Gambar Panitia sudah di upload.</div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning"> pilih gambar lalu tunggu sampai gambar selesai di upload.</div>
+                        }
+                        <BlazorInputFile.InputFile OnChange="HandleFileSelected" />
+
+                    </div>
+
+                    <div class="form-group">
+                        <label for="nim">Upload Gambar Lainnya</label>
+                        @if (!string.IsNullOrEmpty(LainnyaFileUrl))
+                        {
+                            <div class="alert alert-info"> Gambar Lainnya sudah di upload.</div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning"> pilih gambar lalu tunggu sampai gambar selesai di upload.</div>
+                        }
+                        <BlazorInputFile.InputFile OnChange="HandleFileSelected2" />
+
+                    </div>
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    public string PanitiaFileUrl { get; set; }
+    public string LainnyaFileUrl { get; set; }
+    [Parameter]
+    public RenderFragment CustomHeader { get; set; }
+    [Parameter]
+    public InfoQurban TaskObject { get; set; }
+    [Parameter]
+    public Action DataChanged { get; set; }
+    MoslemToolkit.Data.InfoQurbanService service;
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new InfoQurbanService();
+        PanitiaFileUrl = TaskObject.PanitiaUrl;
+        LainnyaFileUrl = TaskObject.InfoLainUrl;
+    }
+    private async void HandleValidSubmit()
+    {
+         if (!string.IsNullOrEmpty(LainnyaFileUrl))
+            TaskObject.InfoLainUrl = LainnyaFileUrl;
+        if (!string.IsNullOrEmpty(PanitiaFileUrl))
+            TaskObject.PanitiaUrl = PanitiaFileUrl;
+        else
+        {
+            toastService.ShowError("Silakan pilih gambar dahulu");
+            return;
+        }
+        if (TaskObject.Id == 0)
+        {
+
+            service.InsertData(TaskObject);
+
+        }
+        else
+        {
+            service.UpdateData(TaskObject);
+        }
+
+        await CloseTaskModal();
+        DataChanged?.Invoke();
+    }
+
+    async Task HandleFileSelected(IFileListEntry[] files)
+    {
+        var file = files.FirstOrDefault();
+        if (file != null)
+        {
+            // Just load into .NET memory to show it can be done
+            // Alternatively it could be saved to disk, or parsed in memory, or similar
+
+            var ms = new MemoryStream();
+            await file.Data.CopyToAsync(ms);
+            //var bytes = ImageHelper.FixedSize(ms, 300, 300, false);
+            string newName = $"PanitiaQurban_{DateTime.Now.ToString("dd_MM_yyyy")}_{Path.GetFileNameWithoutExtension(file.Name)}{Path.GetExtension(file.Name)}";
+            var bytes = ms.ToArray();
+            ms.Dispose();
+            await blob.UploadFile(newName, bytes);
+            PanitiaFileUrl = $"{AppConstants.UploadUrlPrefix}/{newName}";
+        }
+    }
+    async Task HandleFileSelected2(IFileListEntry[] files)
+    {
+        var file = files.FirstOrDefault();
+        if (file != null)
+        {
+            // Just load into .NET memory to show it can be done
+            // Alternatively it could be saved to disk, or parsed in memory, or similar
+
+            var ms = new MemoryStream();
+            await file.Data.CopyToAsync(ms);
+            //var bytes = ImageHelper.FixedSize(ms, 300, 300, false);
+            string newName = $"InfoLainQurban_{DateTime.Now.ToString("dd_MM_yyyy")}_{Path.GetFileNameWithoutExtension(file.Name)}{Path.GetExtension(file.Name)}";
+            var bytes = ms.ToArray();
+            ms.Dispose();
+            await blob.UploadFile(newName, bytes);
+            LainnyaFileUrl = $"{AppConstants.UploadUrlPrefix}/{newName}";
+        }
+    }
+
+    private async Task CloseTaskModal()
+    {
+        await jsRuntime.InvokeAsync<object>("CloseModal", "taskModal");
+    }
+
+
+}

@@ -1,0 +1,174 @@
+﻿@page "/master/InfoQurban"
+
+@inject IJSRuntime jsRuntime
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject NavigationManager NavMgr
+@*@namespace MoslemToolkit.Pages.Master*@
+@inject IToastService toastService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+
+@using System.IO
+<h1>Informasi Qurban</h1>
+
+@if (DataInfoQurban == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <body onbeforeunload="TestDataTablesRemove('#gridData')">
+        <div class="table-responsive">
+            <table id="gridData" name="gridData" class="table table-striped">
+                <thead>
+                    <tr>
+                       
+                        <th>Tahun</th>
+                        <th>Tgl Mulai</th>
+                        <th>Tgl Selesai</th>
+                        <th>Panitia</th>
+                        <th>Info Lainnya</th>
+                        <th>Actions</th>
+                    </tr>
+
+                </thead>
+                <tbody>
+                    @foreach (var item in DataInfoQurban)
+                    {
+                        <tr>
+                            <td>@item.Tahun</td>
+                            <td>@item.TglMulai.ToString("dd MMM yyyy HH:mm")</td>
+                            <td>@item.TglSelesai.ToString("dd MMM yyyy HH:mm")</td>
+                            <td><img width="300" src="@item.PanitiaUrl" alt="PanitiaUrl" /></td>
+                            <td><img width="300" src="@item.InfoLainUrl" alt="InfoLainUrl" /></td>
+                            <td>
+
+                               
+                                    <input type="button" class="btn btn-primary" @onclick="(() => PrepareForEdit(item))" data-toggle="modal" data-target="#taskModal" value="Ubah" />
+                                    <input type="button" class="btn btn-danger" @onclick="(() => PrepareForDelete(item))" data-toggle="modal" data-target="#confirmDeleteModal" value="Hapus" />
+                                
+                            </td>
+
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </body>
+}
+    <div>
+        <input type="button" data-toggle="modal" data-target="#taskModal" class="btn btn-primary" value="Tambah Info Qurban" @onclick="(() => InitializeitemObject())" />
+   
+        <input type="button"  class="btn btn-success" value="Kembali" @onclick='(() => { NavMgr.NavigateTo("/"); })' />
+    </div>
+
+<ConfirmDialog OnClick="@Delete" />
+<InfoQurbanDetail @ref="detail" TaskObject=@itemObject DataChanged="@DataChanged">
+    <CustomHeader>@customHeader</CustomHeader>
+</InfoQurbanDetail>
+
+@code {
+    bool HasLogin = false;
+    InfoQurbanDetail detail;
+    MoslemToolkit.Data.InfoQurbanService service;
+    string customHeader = string.Empty;
+    List<InfoQurban> DataInfoQurban;
+    InfoQurban itemObject = new InfoQurban();
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    string UserName;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new InfoQurbanService();
+
+
+
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (DataInfoQurban != null && DataInfoQurban.Count > 0)
+        {
+
+            await jsRuntime.InvokeAsync<object>("TestDataTablesAdd", "#gridData");
+        }
+        if (firstRender)
+        {
+            if (string.IsNullOrEmpty(UserName))
+            {
+                try
+                {
+                    UserName = await localStorage.GetItemAsync<string>(AppConstants.NameKey);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+                if (string.IsNullOrEmpty(UserName))
+                {
+                    NavMgr.NavigateTo($"/login");
+                }
+                else if (!string.IsNullOrEmpty(UserName) && UserName == AppConstants.USER_ADMIN)
+                {
+                    HasLogin = true;
+
+                }
+                RefreshData();
+                StateHasChanged();
+            }
+        }
+    }
+    void RefreshData()
+    {
+            DataInfoQurban = service.GetAllData();
+
+    }
+    private void InitializeitemObject()
+    {
+
+        itemObject = new InfoQurban();
+        itemObject.Tahun = DateTime.Now.Year;
+        detail.PanitiaFileUrl = "";
+        detail.LainnyaFileUrl = "";
+        var now = DateTime.Now;
+        itemObject.TglMulai = new DateTime(now.Year, now.Month, now.Day,7,0,0);
+        itemObject.TglSelesai = new DateTime(now.Year, now.Month, now.Day,16,0,0);
+
+        //itemObject.Id = -1;
+
+        customHeader = "Tambah Info";
+    }
+    private async void DataChanged()
+    {
+        RefreshData();
+        StateHasChanged();
+    }
+
+    private void PrepareForEdit(InfoQurban item)
+    {
+        customHeader = "Ubah Info";
+        itemObject = item;
+        detail.PanitiaFileUrl = item.PanitiaUrl;
+        detail.LainnyaFileUrl = item.InfoLainUrl;
+    }
+    private void PrepareForDelete(InfoQurban item)
+    {
+        itemObject = item;
+    }
+    private async Task Delete()
+    {
+        var task = service.DeleteData(itemObject.Id);
+        await jsRuntime.InvokeAsync<object>("CloseModal", "confirmDeleteModal");
+        RefreshData();
+        itemObject = new InfoQurban() { Id = -1 };
+    }
+
+    private async System.Threading.Tasks.Task applyPager(string TableName)
+    {
+        await jsRuntime.InvokeAsync<object>("applyPager", TableName);
+    }
+
+}

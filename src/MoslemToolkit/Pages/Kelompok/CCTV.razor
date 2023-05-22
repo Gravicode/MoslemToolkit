@@ -1,0 +1,101 @@
+﻿@page "/master/cctv"
+
+@inject IJSRuntime jsRuntime
+@using MoslemToolkit.Helpers
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject NavigationManager NavMgr
+@*@namespace MoslemToolkit.Pages.Master*@
+@inject IToastService toastService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+
+@using System.IO
+<h1>CCTV Al Yusron</h1>
+
+<p>Gunakan ini untuk monitoring CCTV Al Yusron secara live.</p>
+
+
+<div class="row">
+    @{
+        var count = 1;
+    }
+    @if (CCTVUrls != null)
+    {
+       
+        @foreach (var cctv in CCTVUrls)
+        {
+            
+            <div class="col-lg-4">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">CCTV @(count++)</h6>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">LIVE</h5>
+                        <img style="width: 320px; height: 240px;object-fit: cover;" src="@(cctv+"&rand="+rnd.Next(100))" alt="foto" />
+                    </div>
+                </div>
+
+            </div>
+        }
+
+    }
+    else
+    {
+        <p class="alert alert-info">Loading</p>
+    }
+
+</div>
+@code {
+    Random rnd = new Random(Environment.TickCount);
+    BlazorTimer timer;
+    string UserName;
+    bool HasLogin;
+    string[] CCTVUrls;
+    protected override async Task OnInitializedAsync()
+    {
+        CCTVUrls= new string[] { NavMgr.BaseUri+ "api/cctv/getimage?key=cctv-1", NavMgr.BaseUri+ "api/cctv/getimage?key=cctv-2" };
+        timer = new BlazorTimer();
+        timer.SetTimer(3000);
+        timer.OnElapsed += () =>
+        {
+            InvokeAsync( async ()  =>
+            {
+             
+               // Update the UI
+               StateHasChanged();
+            });
+        };
+        
+
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            if (string.IsNullOrEmpty(UserName))
+            {
+                try
+                {
+                    UserName = await localStorage.GetItemAsync<string>(AppConstants.NameKey);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+                if (string.IsNullOrEmpty(UserName))
+                {
+                    NavMgr.NavigateTo($"/login");
+                }
+                else if (!string.IsNullOrEmpty(UserName) && UserName == AppConstants.USER_ADMIN)
+                {
+                    HasLogin = true;
+
+                }
+                StateHasChanged();
+            }
+        }
+    }
+}

@@ -1,0 +1,133 @@
+﻿@page "/program-jamaah"
+
+@inject IJSRuntime jsRuntime
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject NavigationManager NavMgr
+@*@namespace MoslemToolkit.Pages.Master*@
+@inject IToastService toastService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@using System.IO
+<h1>Daftar Pencapaian Jamaah</h1>
+
+
+@if (DataProgramRamadan == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <body onbeforeunload="TestDataTablesRemove('#gridData')">
+        <div class="table-responsive">
+            <table id="gridData" name="gridData" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Index</th>
+                        <th>Tanggal</th>
+                        <th>Nama</th>
+                        <th>Skor</th>
+                        <th>Target Selesai</th>
+                       
+                    </tr>
+
+                </thead>
+                <tbody>
+                    @{ var rowcount = 0;}
+                    @foreach (var item in DataProgramRamadan)
+                    {
+                        <tr>
+                            <td>@(++rowcount)</td>
+                            <td>@item.TanggalUpdate.ToString("dd/MMM/yyyy HH:mm")</td>
+                            <td>@item.Nama</td>
+                            @{
+                                var total = 0;
+                               
+                                item.TargetPrograms?.ToList().ForEach(x => total += x.Sukses ? x.Skor : 0);
+                            }
+                            <td>@total.ToString("n2")</td>
+
+                            <td>
+
+                                @if (item.TargetPrograms != null)
+                                {
+                                <ul>
+                                    @foreach (var target in item.TargetPrograms)
+                                    {
+                                        if (target.Sukses)
+                                        {
+                                    <li><span class="label label-success">@target.Nama</span></li>
+                                        }
+                                    }
+                                </ul>
+                                }
+
+                            </td>
+
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </body>
+}
+
+@code {
+    ProgramRamadanDetail detail;
+    MoslemToolkit.Data.ProgramRamadanService service;
+    string customHeader = string.Empty;
+    List<ProgramRamadan> DataProgramRamadan;
+    ProgramRamadan itemObject = new ProgramRamadan();
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    string UserName;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new ProgramRamadanService();
+
+        DataProgramRamadan = service.GetAllData();
+
+
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (DataProgramRamadan != null && DataProgramRamadan.Count > 0)
+        {
+
+            await jsRuntime.InvokeAsync<object>("TestDataTablesAdd", "#gridData");
+        }
+        if (firstRender)
+        {
+            if (string.IsNullOrEmpty(UserName))
+            {
+                try
+                {
+                    UserName = await localStorage.GetItemAsync<string>(AppConstants.NameKey);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+                if (string.IsNullOrEmpty(UserName))
+                {
+                    NavMgr.NavigateTo($"/login");
+                }
+                else
+                {
+
+                }
+            }
+        }
+    }
+
+   
+   
+
+    private async System.Threading.Tasks.Task applyPager(string TableName)
+    {
+        await jsRuntime.InvokeAsync<object>("applyPager", TableName);
+    }
+
+}

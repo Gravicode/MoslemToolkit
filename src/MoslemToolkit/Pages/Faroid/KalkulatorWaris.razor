@@ -1,0 +1,273 @@
+﻿@page "/waris"
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject NavigationManager NavMgr
+@inject IToastService toastService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@using System.IO
+
+<h1>Kalkulator Waris</h1>
+
+<p>Gunakan halaman ini untuk menghitung waris sederhana.</p>
+
+<div class="row">
+    <div class="col col-6">
+        <div class="form-group">
+            <h5>Warisan</h5>
+            <hr />
+        </div>
+        <div class="form-group">
+            <label for="nama" class="col-sm-4 col-form-label">Total Warisan</label>
+            <div class="col-sm-11">
+                <input type="number" @bind="estateValue" id="estateValue" placeholder="Total Warisan">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="nama" class="col-sm-4 col-form-label">Hutang</label>
+            <div class="col-sm-11">
+                <input type="number" @bind="Hutang" id="Hutang" placeholder="Hutang">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="nama" class="col-sm-4 col-form-label">Wasiat</label>
+            <div class="col-sm-11">
+                <input type="number" @bind="Wasiat" id="Wasiat" placeholder="Wasiat">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="nama" class="col-sm-4 col-form-label">Pengurusan Jenazah</label>
+            <div class="col-sm-11">
+                <input type="number" @bind="PengurusanJenazah" id="PengurusanJenazah" placeholder="Pengurusan Jenazah">
+            </div>
+        </div>
+    </div>
+    <div class="col col-6">
+        <div class="form-group">
+            <h5>Ahli Waris</h5>
+            <hr />
+        </div>
+        <div class="form-group">
+            <label for="nama" class="col-sm-4 col-form-label">Total Ahli Waris laki-laki</label>
+            <div class="col-sm-11">
+                <input type="number" @bind="maleHeirs" id="maleHeirs" placeholder="jumlah Ahli Waris laki-laki">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="nama" class="col-sm-4 col-form-label">Total Ahli Waris perempuan</label>
+            <div class="col-sm-11">
+                <input type="number" @bind="femaleHeirs" id="femaleHeirs" placeholder="jumlah Ahli Waris perempuan">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="nama" class="col-sm-4 col-form-label">Anak Perempuan</label>
+            <div class="col-sm-11">
+                <input type="number" @bind="daughters" id="daughters" placeholder="jumlah Anak Perempuan">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="nama" class="col-sm-4 col-form-label">Istri</label>
+            <div class="col-sm-11">
+                <input type="number" @bind="wives" id="wives" placeholder="jumlah istri">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="nama" class="col-sm-4 col-form-label">Orang Tua</label>
+            <div class="col-sm-11">
+                <input type="number" @bind="parents" id="parents" placeholder="jumlah Orang Tua">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="nama" class="col-sm-4 col-form-label">Kakek Nenek</label>
+            <div class="col-sm-11">
+                <input type="number" @bind="grandparents" id="grandparents" placeholder="jumlah kakek nenek">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="nama" class="col-sm-4 col-form-label">Saudara Laki-laki Kandung</label>
+            <div class="col-sm-11">
+                <input type="number" @bind="fullBrothers" id="fullBrothers" placeholder="jumlah Saudara Laki-laki Kandung">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="nama" class="col-sm-4 col-form-label">Saudara Laki-laki tiri</label>
+            <div class="col-sm-11">
+                <input type="number" @bind="halfBrothers" id="halfBrothers" placeholder="jumlah Saudara Laki-laki tiri">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="nama" class="col-sm-4 col-form-label">Saudara Perempuan Kandung</label>
+            <div class="col-sm-11">
+                <input type="number" @bind="fullSisters" id="fullSisters" placeholder="jumlah Saudara Perempuan Kandung">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="nama" class="col-sm-4 col-form-label">Saudara Perempuan Tiri</label>
+            <div class="col-sm-11">
+                <input type="number" @bind="halfSisters" id="halfSisters" placeholder="jumlah Saudara Perempuan Tiri">
+            </div>
+        </div>
+        <div class="form-group">
+            <button @onclick="Calculate" class="btn btn-primary">Hitung</button>
+        </div>
+    </div>
+</div>
+
+<h5>Hasil</h5>
+<hr />
+<div class="row">
+    <div class="col col-12">
+        <div class="form-group">
+            <label for="nama" class="col-sm-4 col-form-label">Hasil Pembagian Waris</label>
+            <div class="col-sm-11">
+                <textarea @bind="result" rows="4" id="result" placeholder="hasil" />
+            </div>
+        </div>
+    </div>
+</div>
+@code {
+    string result = string.Empty;
+    double estateValue, Hutang, PengurusanJenazah, Wasiat = 0.0;
+    int maleHeirs, femaleHeirs, daughters, wives, parents, grandparents, fullBrothers, halfBrothers, fullSisters, halfSisters = 0;
+    async Task Calculate()
+    {
+        Console.WriteLine("Islamic Inheritance Calculator\n");
+        try
+        {
+
+            //// Read input values
+            //Console.Write("Enter the total value of the estate: ");
+            //double estateValue = double.Parse(Console.ReadLine());
+            //Console.Write("Enter the number of male heirs: ");
+            //int maleHeirs = int.Parse(Console.ReadLine());
+            //Console.Write("Enter the number of female heirs: ");
+            //int femaleHeirs = int.Parse(Console.ReadLine());
+            //Console.Write("Enter the number of daughters: ");
+            //int daughters = int.Parse(Console.ReadLine());
+            //Console.Write("Enter the number of wives: ");
+            //int wives = int.Parse(Console.ReadLine());
+            //Console.Write("Enter the number of parents: ");
+            //int parents = int.Parse(Console.ReadLine());
+            //Console.Write("Enter the number of grandparents: ");
+            //int grandparents = int.Parse(Console.ReadLine());
+            //Console.Write("Enter the number of full brothers: ");
+            //int fullBrothers = int.Parse(Console.ReadLine());
+            //Console.Write("Enter the number of half brothers: ");
+            //int halfBrothers = int.Parse(Console.ReadLine());
+            //Console.Write("Enter the number of full sisters: ");
+            //int fullSisters = int.Parse(Console.ReadLine());
+            //Console.Write("Enter the number of half sisters: ");
+            //int halfSisters = int.Parse(Console.ReadLine());
+            estateValue -= Hutang;
+            estateValue -= Wasiat;
+            estateValue -= PengurusanJenazah;
+
+            // Calculate inheritance distribution
+            double[] shares = new double[maleHeirs + femaleHeirs];
+            if (daughters > 0)
+            {
+                double daughterShare = estateValue * 0.5;
+                shares[0] = daughterShare;
+                for (int i = 1; i < shares.Length; i++)
+                {
+                    shares[i] = daughterShare / (maleHeirs + femaleHeirs - 1);
+                }
+            }
+            else
+            {
+                double maleShare = estateValue * 0.66666667;
+                double femaleShare = estateValue * 0.33333333;
+                for (int i = 0; i < maleHeirs; i++)
+                {
+                    shares[i] = maleShare / maleHeirs;
+                }
+                for (int i = maleHeirs; i < shares.Length; i++)
+                {
+                    shares[i] = femaleShare / femaleHeirs;
+                }
+            }
+            if (wives > 0)
+            {
+                for (int i = 0; i < shares.Length; i++)
+                {
+                    shares[i] += estateValue * 0.125 / (maleHeirs + femaleHeirs);
+                }
+            }
+            if (parents > 0)
+            {
+                double parentShare = estateValue * 0.16666667;
+                for (int i = 0; i < parents; i++)
+                {
+                    shares[i] += parentShare / parents;
+                }
+            }
+            if (grandparents > 0)
+            {
+                double grandparentShare = estateValue * 0.08333333;
+                for (int i = parents; i < parents + grandparents; i++)
+                {
+                    shares[i] += grandparentShare / grandparents;
+                }
+            }
+            if (fullBrothers > 0)
+            {
+                double brotherShare = estateValue * 0.16666667;
+                for (int i = parents + grandparents; i < parents + grandparents + fullBrothers; i++)
+                {
+                    shares[i] += brotherShare / fullBrothers;
+                }
+            }
+            if (halfBrothers > 0)
+            {
+                double halfBrotherShare = estateValue * 0.08333333;
+                for (int i = parents + grandparents + fullBrothers; i < parents + grandparents + fullBrothers + halfBrothers; i++)
+                {
+                    shares[i] += halfBrotherShare / halfBrothers;
+                }
+            }
+            if (fullSisters > 0)
+            {
+                double sisterShare = estateValue * 0.16666667;
+                for (int i = parents + grandparents + fullBrothers + halfBrothers; i < shares.Length; i++)
+                {
+                    if (i - parents - grandparents - fullBrothers - halfBrothers < fullSisters)
+                    {
+                        shares[i] += sisterShare / fullSisters;
+                    }
+                }
+            }
+            if (halfSisters > 0)
+            {
+                double halfSisterShare = estateValue * 0.08333333;
+                for (int i = parents + grandparents + fullBrothers + halfBrothers + fullSisters; i < shares.Length; i++)
+                {
+                    if (i - parents - grandparents - fullBrothers - halfBrothers - fullSisters < halfSisters)
+                    {
+                        shares[i] += halfSisterShare / halfSisters;
+                    }
+                }
+            }
+            result = string.Empty;
+            // Display inheritance distribution
+            Console.WriteLine("\nInheritance Distribution:");
+            for (int i = 0; i < shares.Length; i++)
+            {
+                if (i < maleHeirs)
+                {
+                    result += string.Format("Pewaris Laki-laki {0}: {1:n2}", i + 1, shares[i])+Environment.NewLine;
+                    Console.WriteLine("Pewaris Laki-laki {0}: {1:n2}", i + 1, shares[i]);
+                }
+                else if (i < maleHeirs + femaleHeirs)
+                {
+                    result += string.Format("Pewaris Perempuan {0}: {1:n2}", i - maleHeirs + 1, shares[i]) + Environment.NewLine;
+                    Console.WriteLine("Pewaris Perempuan {0}: {1:n2}", i - maleHeirs + 1, shares[i]);
+                }
+            }
+
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowError($"fail to calculate: {ex}");
+        }
+    }
+
+}

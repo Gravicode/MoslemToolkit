@@ -1,0 +1,174 @@
+﻿@page "/master/Anekdot"
+@layout MainLayoutPJKBM
+@inject IJSRuntime jsRuntime
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject NavigationManager NavMgr
+@*@namespace MoslemToolkit.Pages.Master*@
+@inject IToastService toastService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@using System.IO
+<h1>Daftar Anekdot</h1>
+
+<p>Gunakan halaman ini untuk menyimpan data anekdot</p>
+
+@if (DataAnekdot == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <body onbeforeunload="TestDataTablesRemove('#gridData')">
+        <div class="table-responsive">
+            <table id="gridData" name="gridData" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Tanggal</th>
+                        <th>Kelas</th>
+                        <th>Permasalahan / Uraian</th>
+                        <th>Solusi / Hikmah</th>
+                        <th>Pendidik</th>
+                        <th>Actions</th>
+                    </tr>
+
+                </thead>
+                <tbody>
+                    @foreach (var item in DataAnekdot)
+                    {
+                    <tr>
+                        <td>@item.Tanggal.ToString("yyyy-MM-dd")</td>
+                        <td>@item.Kelas.Nama</td>
+                        <td>@item.Permasalahan</td>
+                        <td>@item.Solusi</td>
+                        <td>@item.Pendidik</td>
+                        <td>
+                                @if (HasLogin)
+                                {
+                                    <input type="button" class="btn btn-primary btn-sm mt-1" @onclick="(() => PrepareForEdit(item))" data-toggle="modal" data-target="#taskModal" value="Ubah" />
+                                    <input type="button" class="btn btn-danger btn-sm mt-1" @onclick="(() => PrepareForDelete(item))" data-toggle="modal" data-target="#confirmDeleteModal" value="Hapus" />
+                                }
+
+                        </td>
+
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </body>
+}
+@if (HasLogin)
+{
+    <div>
+        <input type="button" data-toggle="modal" data-target="#taskModal" class="btn btn-primary" value="Tambah Anekdot" @onclick="(() => InitializeitemObject())" />
+    </div>
+}
+<ConfirmDialog OnClick="@Delete" />
+<AnekdotDetail @ref="detail" TaskObject=@itemObject DataChanged="@DataChanged">
+    <CustomHeader>@customHeader</CustomHeader>
+</AnekdotDetail>
+
+@code {
+    bool HasLogin;
+    AnekdotDetail detail;
+    MoslemToolkit.Data.AnekdotService service;
+    string customHeader = string.Empty;
+    List<Anekdot> DataAnekdot;
+    Anekdot itemObject = new Anekdot();
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    string UserName;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new AnekdotService();
+
+        DataAnekdot = service.GetAllData();
+
+
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (DataAnekdot != null && DataAnekdot.Count > 0)
+        {
+
+            await jsRuntime.InvokeAsync<object>("TestDataTablesAdd", "#gridData");
+        }
+        if (firstRender)
+        {
+            if (string.IsNullOrEmpty(UserName))
+            {
+                try
+                {
+                    UserName = await localStorage.GetItemAsync<string>(AppConstants.NameKey);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+                if (string.IsNullOrEmpty(UserName))
+                {
+                    NavMgr.NavigateTo($"/login");
+                }
+                else 
+                    {
+                        HasLogin = RoleInfo.HasRole(UserName,Roles.Pengurus) || RoleInfo.HasRole(UserName,Roles.PJKBM);
+                        StateHasChanged();
+                    }
+            }
+        }
+    }
+
+    private void InitializeitemObject()
+    {
+
+        itemObject = new Anekdot();
+        itemObject.Tanggal = DateHelper.GetLocalTimeNow();
+        itemObject.Pendidik = UserName;
+
+
+
+        //itemObject.Id = -1;
+
+        customHeader = "Tambah Anekdot";
+    }
+    private async void DataChanged()
+    {
+        DataAnekdot = service.GetAllData();
+        StateHasChanged();
+    }
+
+    private void PrepareForEdit(Anekdot item)
+    {
+        customHeader = "Ubah Anekdot";
+        itemObject = item;
+
+    }
+    private void PrepareForDelete(Anekdot item)
+    {
+        itemObject = item;
+    }
+    private void ClearChat(Anekdot item)
+    {
+        ChatMessageService svc = new ChatMessageService();
+        if (item != null)
+        {
+            svc.ClearChat(item.Id);
+        }
+    }
+    private async Task Delete()
+    {
+        var task = service.DeleteData(itemObject.Id);
+        await jsRuntime.InvokeAsync<object>("CloseModal", "confirmDeleteModal");
+        DataAnekdot = service.GetAllData();
+        itemObject = new Anekdot() { Id = -1 };
+    }
+
+    private async System.Threading.Tasks.Task applyPager(string TableName)
+    {
+        await jsRuntime.InvokeAsync<object>("applyPager", TableName);
+    }
+
+}

@@ -1,0 +1,228 @@
+﻿@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@using MoslemToolkit.Helpers
+
+@inject IJSRuntime jsRuntime
+@*@namespace MoslemToolkit.Pages.Master*@
+@using System.IO
+@inject IToastService toastService
+@inject AzureBlobHelper blob;
+
+<div class="modal" tabindex="-1" role="dialog" id="taskModal">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@CustomHeader</h5>
+
+
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@TaskObject" OnValidSubmit="@HandleValidSubmit">
+                    <DataAnnotationsValidator />
+
+                    <div class="form-group">
+                        <label for="kk">No. KK</label>
+                        <input type="hidden" @bind-value="@TaskObject.Id" />
+                        <InputText id="kk" class="form-control" @bind-Value="@TaskObject.KK" />
+                        <ValidationMessage For="@(() => TaskObject.KK)" />
+                    </div>
+
+
+                    <div class="form-group">
+                        <label for="tempat-lahir">Tempat Lahir</label>
+                        <InputText id="tempat-lahir" class="form-control" @bind-Value="@TaskObject.TempatLahir" />
+                        <ValidationMessage For="@(() => TaskObject.TempatLahir)" />
+                    </div>   
+
+                    <div class="form-group">
+                        <label for="tanggal">Tanggal</label>
+                        <InputDate id="tanggal" class="form-control" @bind-Value="@TaskObject.TanggalLahir" />
+                        <ValidationMessage For="@(() => TaskObject.TanggalLahir)" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="nama">Nama Lengkap</label>
+                        <InputText id="nama" class="form-control" @bind-Value="@TaskObject.Nama" />
+                        <ValidationMessage For="@(() => TaskObject.Nama)" />
+                    </div>   
+                    
+                    <div class="form-group">
+                        <label for="nama-ayah">Nama Ayah</label>
+                        <InputText id="nama-ayah" class="form-control" @bind-Value="@TaskObject.Ayah" />
+                        <ValidationMessage For="@(() => TaskObject.Ayah)" />
+                    </div>   
+                    
+                    <div class="form-group">
+                        <label for="nama-ibu">Nama Ibu</label>
+                        <InputText id="nama-ibu" class="form-control" @bind-Value="@TaskObject.Ibu" />
+                        <ValidationMessage For="@(() => TaskObject.Ibu)" />
+                    </div>
+
+
+                    <div class="form-group">
+                        <label for="kelamin">Kelamin</label>
+                        <select @bind="@TaskObject.Kelamin" id="kelamin">
+                            <option value="-">Pilih</option>
+
+                            <option value="L">Laki-laki</option>
+                            <option value="P">Perempuan</option>
+
+                        </select>
+                        <ValidationMessage For="@(() => TaskObject.Kelamin)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="status">Status</label>
+                        <select @bind="@TaskObject.Posisi" id="status">
+                            <option value="-">Pilih</option>
+                            @foreach (PosisiKeluarga item in Enum.GetValues(typeof(PosisiKeluarga)))
+                            {
+                                <option value="@item">@item.ToString()</option>
+
+                            }
+                        </select>
+                        <ValidationMessage For="@(() => TaskObject.Posisi)" />
+                    </div>
+                     <div class="form-group">
+                        <label for="pendidika">Pendidikan</label>
+                        <select @bind="@TaskObject.Pendidikan" id="pendidikan">
+                            <option value="-">Pilih</option>
+                            @foreach (var item in AppConstants.Pendidikans)
+                            {
+                                <option value="@item">@item</option>
+
+                            }
+                        </select>
+                        <ValidationMessage For="@(() => TaskObject.Pendidikan)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="pekerjaan">Pekerjaan</label>
+                        <select @bind="@TaskObject.Pekerjaan" id="pekerjaan">
+                            <option value="-">Pilih</option>
+                            @foreach (var item in AppConstants.Pekerjaans)
+                            {
+                            <option value="@item">@item</option>
+
+                            }
+                        </select>
+                        <ValidationMessage For="@(() => TaskObject.Pekerjaan)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="menikah">Menikah ?</label>
+                        <select @bind="@TaskObject.Status" id="menikah">
+                            <option value="-">Pilih</option>
+                            @foreach (StatusPernikahan item in Enum.GetValues(typeof(StatusPernikahan)))
+                            {
+                                <option value="@item">@item.ToString()</option>
+
+                            }
+                        </select>
+                        <ValidationMessage For="@(() => TaskObject.Status)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Telepon</label>
+                        <InputText id="phone" class="form-control" @bind-Value="@TaskObject.Telepon" />
+                        <ValidationMessage For="@(() => TaskObject.Telepon)" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" class="form-control" @bind="@TaskObject.Email" />
+                        <ValidationMessage For="@(() => TaskObject.Email)" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="alamat">Alamat</label>
+                        <InputTextArea id="alamat" class="form-control" @bind-Value="@TaskObject.Alamat" />
+                        <ValidationMessage For="@(() => TaskObject.Alamat)" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="nim">Upload Foto</label>
+                        @if (!string.IsNullOrEmpty(FileUrl))
+                        {
+                            <div class="alert alert-info">Foto sudah di upload.</div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning"> pilih foto Anda lalu tunggu sampai file selesai di upload.</div>
+                        }
+                        <BlazorInputFile.InputFile OnChange="HandleFileSelected" />
+
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    public string FileUrl { get; set; }
+    [Parameter]
+    public RenderFragment CustomHeader { get; set; }
+    [Parameter]
+    public Jamaah TaskObject { get; set; }
+    [Parameter]
+    public Action DataChanged { get; set; }
+    MoslemToolkit.Data.JamaahService service;
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new JamaahService();
+        FileUrl = TaskObject.PhotoUrl;
+    }
+    private async void HandleValidSubmit()
+    {
+
+        if (!string.IsNullOrEmpty(FileUrl))
+            TaskObject.PhotoUrl = FileUrl;
+        if (TaskObject.Id == 0)
+        {
+
+            var hasil = service.InsertData(TaskObject);
+            if (!hasil)
+            {
+                toastService.ShowError("Gagal menyimpan data. Isi data dengan lengkap.");
+            }
+        }
+        else
+        {
+            service.UpdateData(TaskObject);
+        }
+
+        await CloseTaskModal();
+        DataChanged?.Invoke();
+    }
+    async Task HandleFileSelected(IFileListEntry[] files)
+    {
+        var file = files.FirstOrDefault();
+        if (file != null)
+        {
+            // Just load into .NET memory to show it can be done
+            // Alternatively it could be saved to disk, or parsed in memory, or similar
+
+            var ms = new MemoryStream();
+            await file.Data.CopyToAsync(ms);
+            var bytes = ImageHelper.FixedSize(ms, 300, 300, false);
+            string newName = $"Foto_{DateTime.Now.ToString("dd_MM_yyyy")}_{Path.GetFileNameWithoutExtension(file.Name)}{Path.GetExtension(file.Name)}";
+            //var bytes = ms.ToArray();
+            ms.Dispose();
+            await blob.UploadFile(newName, bytes);
+            FileUrl = $"{AppConstants.UploadUrlPrefix}/{newName}";
+        }
+    }
+
+
+    private async Task CloseTaskModal()
+    {
+        await jsRuntime.InvokeAsync<object>("CloseModal", "taskModal");
+    }
+
+
+}

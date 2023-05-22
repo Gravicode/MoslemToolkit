@@ -1,0 +1,119 @@
+﻿@page "/report/laporan-bulanan"
+
+@layout MainLayoutPJKBM
+
+@using System.IO
+@using MoslemToolkit.Helpers
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@using System.Data
+@inject IToastService toastService
+@inject IJSRuntime jsRuntime
+@inject LaporanBulananService LaporanBulananSvc
+
+
+<div id="canvas1" style="background-color:white;" class="container-fluid">
+
+    <h2>Laporan Bulanan PJKBM</h2>
+    <div class="row">
+        <div class="col col-12">
+            <div class="form-group">
+                <label for="tahun" class="col-sm-2 col-form-label">Tahun</label>
+                <div class="col-sm-11">
+                    <input type="number" class="form-control" @bind="Tahun" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="bulan" class="col-sm-2 col-form-label">Bulan</label>
+                <div class="col-sm-11">
+                    @if (ListBulan != null)
+                    {
+                        <select class="form-control" @bind="Bulan">
+                            <option value="-1">Pilih</option>
+                            @foreach (var template in ListBulan)
+                            {
+                                <option value=@template.index>@template.nama</option>
+                            }
+                        </select>
+                    }
+                </div>
+            </div>
+
+            <button @onclick="RefreshData" class="btn btn-info">Refresh</button>
+
+            <button @onclick="CetakImage" class="btn btn-primary">Cetak Gambar</button>
+
+        </div>
+
+    </div>
+    <hr />
+    <h3>Data Kelas</h3>
+    @if (LaporanBulananSvc.DataKelas != null)
+    {
+        <div class="table-responsive">
+            <table id="gridData" name="gridData" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Kelas</th>
+                        <th>Wali Kelas</th>
+                        <th>Kelompok</th>
+                        <th>Range Usia (tahun)</th>
+                        <th>Jumlah Siswa (orang)</th>
+                        <th>Siswa</th>
+                    </tr>
+
+                </thead>
+                <tbody>
+                    @foreach (var item in LaporanBulananSvc.DataKelas)
+                    {
+                        <tr>
+                            <td>@item.Nama</td>
+                            <td>@item.WaliKelas</td>
+                            <td>@item.Kelompok</td>
+                            <td>@item.MinUsia - @item.MaxUsia</td>
+                            <td>@(item.SiswaPerKelas?.Count())</td>
+                            <td>
+                                <ul>
+                                    @foreach (var siswa in item.SiswaPerKelas)
+                                    {
+                                        <li>@siswa.Jamaah.Nama</li>
+                                    }
+                                </ul>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+@code {
+    int Tahun, Bulan;
+    record bulan(string nama, int index);
+    List<bulan> ListBulan = new();
+    string PesanStatus;
+    protected override async Task OnInitializedAsync()
+    {
+        for (int i = 1; i < 13; i++)
+        {
+            var date = new DateTime(DateTime.Now.Year, i, 1);
+            ListBulan.Add(new bulan(date.ToString("MMMM"), i));
+        }
+        var now = DateHelper.GetLocalTimeNow();
+        Tahun = now.Year;
+        Bulan = now.Month;
+
+        await RefreshData();
+
+    }
+    public async Task RefreshData()
+    {
+        var result = LaporanBulananSvc.LoadReport(Tahun, Bulan);
+    }
+    async Task CetakImage()
+    {
+        await jsRuntime.InvokeVoidAsync("HtmlToImage", "canvas1");
+    }
+
+
+}

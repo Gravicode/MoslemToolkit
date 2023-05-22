@@ -1,0 +1,126 @@
+﻿@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject IJSRuntime jsRuntime
+@*@namespace MoslemToolkit.Pages.Master*@
+@using System.IO
+@inject IToastService toastService
+
+<div class="modal" tabindex="-1" role="dialog" id="taskModal">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@CustomHeader</h5>
+
+
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="@TaskObject" OnValidSubmit="@HandleValidSubmit">
+                    <DataAnnotationsValidator />
+
+                    <div class="form-group">
+                        <label for="no">No</label>
+                        <input type="hidden" @bind-value="@TaskObject.Id" />
+                        <input type="date" id="tgl" class="form-control" @bind="@TaskObject.Tanggal" />
+                        <ValidationMessage For="@(() => TaskObject.Tanggal)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="Anekdot">Kelas</label>
+                        <select @bind="TaskObject.KelasId">
+                            
+                            @foreach (var template in DataKelas)
+                            {   
+                                    <option value=@template.Id>@template.Nama</option>
+                            }
+                        </select>
+                        <ValidationMessage For="@(() => TaskObject.KelasId)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="Permasalahan">Permasalahan</label>
+                        <textarea id="Permasalahan" class="form-control" @bind="@TaskObject.Permasalahan" />
+                        <ValidationMessage For="@(() => TaskObject.Permasalahan)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="Solusi">Solusi</label>
+                        <textarea id="Solusi" class="form-control" @bind="@TaskObject.Solusi" />
+                        <ValidationMessage For="@(() => TaskObject.Solusi)" />
+                    </div>
+                    <div class="form-group">
+                        <label for="pendidik">Pendidik</label>
+                        <InputText id="pendidik" class="form-control" @bind-Value="@TaskObject.Pendidik" />
+                        <ValidationMessage For="@(() => TaskObject.Pendidik)" />
+                    </div>
+
+
+
+
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    public string FileUrl { get; set; }
+    [Parameter]
+    public RenderFragment CustomHeader { get; set; }
+    [Parameter]
+    public Anekdot TaskObject { get; set; }
+    [Parameter]
+    public Action DataChanged { get; set; }
+    MoslemToolkit.Data.AnekdotService service;
+    MoslemToolkit.Data.KelasService Kelasservice;
+    public List<Kelas> DataKelas;
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new AnekdotService();
+        if (Kelasservice == null) Kelasservice = new KelasService();
+        if (DataKelas == null)
+        {
+            DataKelas = Kelasservice.GetAllData();
+        }
+    }
+
+    void PilihKelas(ChangeEventArgs e)
+    {
+        var selStr = e.Value.ToString();// as Kelas;
+        var sel = Kelasservice.FindByKeyword(selStr).FirstOrDefault();
+        TaskObject.KelasId = sel.Id;
+        TaskObject.Pendidik = sel.WaliKelas;
+        //Console.WriteLine("It is definitely: " + selectedString);
+    }
+
+    private async void HandleValidSubmit()
+    {
+
+
+        if (TaskObject.Id == 0)
+        {
+
+            service.InsertData(TaskObject);
+
+        }
+        else
+        {
+            service.UpdateData(TaskObject);
+        }
+
+        await CloseTaskModal();
+        DataChanged?.Invoke();
+    }
+
+
+
+    private async Task CloseTaskModal()
+    {
+        await jsRuntime.InvokeAsync<object>("CloseModal", "taskModal");
+    }
+
+
+}

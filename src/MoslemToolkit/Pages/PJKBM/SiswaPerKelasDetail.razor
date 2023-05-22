@@ -1,0 +1,135 @@
+﻿@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@using System.Linq
+@inject IJSRuntime jsRuntime
+@*@namespace MoslemToolkit.Pages.Master*@
+@using System.IO
+@inject IToastService toastService
+@inject SiswaPerKelasService SiswaPerKelasSvc
+
+<div class="modal" tabindex="-1" role="dialog" id="taskModal">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@CustomHeader</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                @if (DaftarSiswa != null)
+                {
+                    <div class="table-responsive" style="overflow-y: auto;">
+                        <table id="gridData2" name="gridData" class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Pilih</th>
+                                    <th>Nama</th>
+                                    <th>Status</th>
+                                    <th>Tanggal Lahir</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in DaftarSiswa)
+                                {
+                                    <tr>
+                                        <td><input type="checkbox" @bind="@item.Selected"></td>
+                                        <td>@item.JamaahItem.Nama</td>
+                                        <td>@item.JamaahItem.Status</td>
+                                        <td>@(item.JamaahItem.TanggalLahir?.ToString("dd MMM yyyy"))</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                <button type="submit" class="btn btn-primary" @onclick="HandleValidSubmit">Simpan</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    public class SiswaJamaah
+    {
+        public bool Selected { set; get; }
+        public Jamaah JamaahItem { set; get; }
+    }
+    List<SiswaJamaah> DaftarSiswa;
+    public string FileUrl { get; set; }
+    [Parameter]
+    public RenderFragment CustomHeader { get; set; }
+    [Parameter]
+    public Kelas TaskObject { get; set; }
+    [Parameter]
+    public Action DataChanged { get; set; }
+    MoslemToolkit.Data.JamaahService service;
+    KelasService KelasSvc;
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new JamaahService();
+        if (KelasSvc == null) KelasSvc = new KelasService();
+        Refresh();
+    }
+
+    public async void Refresh()
+    {
+        if (DaftarSiswa == null && TaskObject != null && TaskObject.SiswaPerKelas != null)
+        {
+            var dict = new HashSet<long>();
+            TaskObject.SiswaPerKelas.ToList().ForEach(c => { dict.Add(c.JamaahId); });
+            var allJamaah = service.GetAllData();
+            DaftarSiswa = new List<SiswaJamaah>();
+            foreach (var item in allJamaah)
+            {
+                DaftarSiswa.Add(new SiswaJamaah() { Selected = dict.Contains(item.Id), JamaahItem = item });
+            }
+
+        }
+
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await jsRuntime.InvokeAsync<object>("TestDataTablesAdd", "#gridData2");
+    }
+    private async void HandleValidSubmit()
+    {
+        var now = DateHelper.GetLocalTimeNow();
+        //TaskObject.SiswaPerKelas.Clear();
+        var selected = DaftarSiswa.Where(x => x.Selected).ToList();
+        selected.ForEach(x =>
+        {
+            x.JamaahItem.KelasId = TaskObject.Id;
+            service.UpdateData(x.JamaahItem);
+            if(!TaskObject.SiswaPerKelas.Any(c=>c.JamaahId == x.JamaahItem.Id))
+            {
+                var newItem = new Models.SiswaPerKelas() { JamaahId = x.JamaahItem.Id, KelasId = TaskObject.Id, Tahun = now.Year };
+                SiswaPerKelasSvc.InsertData(newItem);
+            }
+        });
+        var removed = new List<Models.SiswaPerKelas>();
+        foreach(var item in TaskObject.SiswaPerKelas)
+        {
+            if(!selected.Any(x => x.JamaahItem.Id == item.JamaahId))
+            {
+                removed.Add(item);
+            }
+        }
+        if(removed.Count>0)
+            SiswaPerKelasSvc.DeleteData(removed);
+        KelasSvc.UpdateData(TaskObject);
+
+        await CloseTaskModal();
+        DataChanged?.Invoke();
+    }
+
+
+
+    private async Task CloseTaskModal()
+    {
+        await jsRuntime.InvokeAsync<object>("CloseModal", "taskModal");
+    }
+
+
+}

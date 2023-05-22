@@ -1,0 +1,171 @@
+﻿@page "/master/video-stream"
+
+@inject IJSRuntime jsRuntime
+@using MoslemToolkit.Models
+@using MoslemToolkit.Data
+@inject NavigationManager NavMgr
+@*@namespace MoslemToolkit.Pages.Master*@
+@inject IToastService toastService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@using System.IO
+<h1>Daftar Video Stream</h1>
+
+<p>Gunakan halaman ini untuk menyimpan video stream.</p>
+
+@if (DataVideoStream == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+<body onbeforeunload="TestDataTablesRemove('#gridData')">
+    <div class="table-responsive">
+            <table id="gridData" name="gridData" class="table w-auto table-striped">
+                <thead>
+                    <tr>
+                        <th>Index</th>
+                        <th>Nama</th>
+                        <th>Tanggal</th>
+                        <th>Keterangan</th>
+                        <th>Embed</th>
+                        <th>Url</th>
+                        <th>Actions</th>
+                    </tr>
+
+                </thead>
+                <tbody>
+                    @foreach (var item in DataVideoStream)
+                    {
+                        <tr>
+                            <td>@item.Id</td>
+                            <td>@item.Nama</td>
+                            <td>@item.Tanggal.ToString("dd/MMM/yyyy HH:mm")</td>
+                            <td>@item.Keterangan</td>
+
+                            <td>@item.EmbedHTML</td>
+                            <td><a href="/live-streaming/@item.Id">Buka Video</a></td>
+                            <td>
+
+                                <input type="button" class="btn btn-primary" @onclick="(() => PrepareForEdit(item))" data-toggle="modal" data-target="#taskModal" value="Ubah" />
+                                <input type="button" class="btn btn-danger" @onclick="(() => PrepareForDelete(item))" data-toggle="modal" data-target="#confirmDeleteModal" value="Hapus" />
+                                <input type="button" class="btn btn-warning" @onclick="(() => ClearChat(item))" value="Clear Chat" />
+
+                            </td>
+
+                        </tr>
+                    }
+                </tbody>
+            </table>
+     </div>
+</body>
+}
+<div>
+    <input type="button" data-toggle="modal" data-target="#taskModal" class="btn btn-primary" value="Tambah VideoStream" @onclick="(() => InitializeitemObject())" />
+</div>
+<ConfirmDialog OnClick="@Delete" />
+<VideoStreamDetail @ref="detail" TaskObject=@itemObject DataChanged="@DataChanged">
+    <CustomHeader>@customHeader</CustomHeader>
+</VideoStreamDetail>
+
+@code {
+    VideoStreamDetail detail;
+    MoslemToolkit.Data.VideoStreamService service;
+    string customHeader = string.Empty;
+    List<VideoStream> DataVideoStream;
+    VideoStream itemObject = new VideoStream();
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    string UserName;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (service == null) service = new VideoStreamService();
+
+        DataVideoStream = service.GetAllData();
+
+
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (DataVideoStream != null && DataVideoStream.Count > 0)
+        {
+
+            await jsRuntime.InvokeAsync<object>("TestDataTablesAdd", "#gridData");
+        }
+        if (firstRender)
+        {
+            if (string.IsNullOrEmpty(UserName))
+            {
+                try
+                {
+                    UserName = await localStorage.GetItemAsync<string>(AppConstants.NameKey);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+                if (string.IsNullOrEmpty(UserName))
+                {
+                    NavMgr.NavigateTo($"/login");
+                }
+                else
+                {
+
+                }
+            }
+        }
+    }
+
+    private void InitializeitemObject()
+    {
+
+        itemObject = new VideoStream();
+
+        itemObject.Tanggal = DateHelper.GetLocalTimeNow();
+
+
+
+        //itemObject.Id = -1;
+
+        customHeader = "Tambah Video Stream";
+    }
+    private async void DataChanged()
+    {
+        DataVideoStream = service.GetAllData();
+        StateHasChanged();
+    }
+
+    private void PrepareForEdit(VideoStream item)
+    {
+        customHeader = "Ubah Video Stream";
+        itemObject = item;
+
+    }
+    private void PrepareForDelete(VideoStream item)
+    {
+        itemObject = item;
+    }
+    private void ClearChat(VideoStream item)
+    {
+        ChatMessageService svc = new ChatMessageService();
+        if (item != null)
+        {
+            svc.ClearChat(item.Id);
+        }
+    }
+    private async Task Delete()
+    {
+        var task = service.DeleteData(itemObject.Id);
+        await jsRuntime.InvokeAsync<object>("CloseModal", "confirmDeleteModal");
+        DataVideoStream = service.GetAllData();
+        itemObject = new VideoStream() { Id = -1 };
+    }
+
+    private async System.Threading.Tasks.Task applyPager(string TableName)
+    {
+        await jsRuntime.InvokeAsync<object>("applyPager", TableName);
+    }
+
+}
