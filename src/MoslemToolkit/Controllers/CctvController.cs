@@ -2,6 +2,7 @@
 using MoslemToolkit.Data;
 using MoslemToolkit.Helpers;
 using MoslemToolkit.Models;
+using SkiaSharp;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -47,7 +48,7 @@ namespace MoslemToolkit.Controllers
             var img = tempStorageService.GetItem(Key);
             if (img == null)
             {
-                var stream = new MemoryStream(ImageNotAvailable());
+                var stream = new MemoryStream(ImageNotAvailable2());
                 return File(stream, "image/jpeg");
             }
             else
@@ -74,6 +75,37 @@ namespace MoslemToolkit.Controllers
                 var bytes = ImageHelper.ImageToByte(upImage);
                 return bytes;
             }
+        }
+        byte[] ImageNotAvailable2()
+        {
+            var info = new SKImageInfo(320,240);
+            using (var surface = SKSurface.Create(info))
+            {
+                SKCanvas canvas = surface.Canvas;
+
+                canvas.Clear(SKColors.White);
+
+               
+
+                // draw centered text, stroked
+                using (var paint = new SKPaint())
+                {
+                    paint.TextSize = 64.0f;
+                    paint.IsAntialias = true;
+                    paint.Color = SKColors.IndianRed;
+                    paint.IsStroke = true;
+                    paint.StrokeWidth = 3;
+                    paint.TextAlign = SKTextAlign.Center;
+                    paint.TextSize = 20;
+                 
+                    canvas.DrawText("NO CCTV IMAGE",  (info.Width / 2) - 50, info.Height / 2, paint);
+                }
+
+                SKData snapshot = surface.Snapshot().Encode();
+                byte[] surfaceData = snapshot.ToArray();
+                return surfaceData;
+            }
+            
         }
     }
 
