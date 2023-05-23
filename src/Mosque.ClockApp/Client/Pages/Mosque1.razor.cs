@@ -37,7 +37,7 @@ namespace Mosque.ClockApp.Client.Pages
         string TanggalMasehi;
         string TanggalHijriah;
         [Parameter]
-        public string Kode { set; get; } = "ALYUSRON";
+        public string Kode { set; get; } = "ALAMIN";
         protected override void OnInitialized()
         {
             if (info == null)
@@ -166,8 +166,8 @@ namespace Mosque.ClockApp.Client.Pages
             {
                 prayerdata.Add(item.Nama, $"{String.Format("{0:00}", item.Waktu.Hours)}:{String.Format("{0:00}", item.Waktu.Minutes)}");
             }
-
-            await jsRuntime.InvokeAsync<object>("LoadPage", 1, prayerdata, detail?.ImageUrl[0].Url, null);
+            if(detail?.ImageUrl.Count>0)
+                await jsRuntime.InvokeAsync<object>("LoadPage", 1, prayerdata, detail?.ImageUrl[0].Url, null);
         }
 
         protected override async Task OnInitializedAsync()

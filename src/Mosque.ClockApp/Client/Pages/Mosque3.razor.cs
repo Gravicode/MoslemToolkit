@@ -170,7 +170,8 @@ namespace Mosque.ClockApp.Client.Pages
 
             var imgurls = new List<string>();
             detail?.ImageUrl.ForEach(x => imgurls.Add(x.Url));
-            await jsRuntime.InvokeAsync<object>("LoadPage", 3, prayerdata, imgurls, detail?.VideoUrl);
+            if (!string.IsNullOrEmpty(detail?.VideoUrl))
+                await jsRuntime.InvokeAsync<object>("LoadPage", 3, prayerdata, imgurls, detail?.VideoUrl);
         }
 
         protected override async Task OnInitializedAsync()
