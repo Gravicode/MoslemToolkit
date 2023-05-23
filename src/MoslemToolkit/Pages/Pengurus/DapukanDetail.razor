@@ -21,7 +21,7 @@
                     <DataAnnotationsValidator />
 
                     <div class="form-group">
-                        <label for="nama">Nama Dapukan</label>
+                        <label for="nama">Nama Jabatan</label>
                         <input type="hidden" @bind-value="@TaskObject.Id" />
                         <InputText id="Nama" class="form-control" @bind-Value="@TaskObject.Nama" />
                         <ValidationMessage For="@(() => TaskObject.Nama)" />

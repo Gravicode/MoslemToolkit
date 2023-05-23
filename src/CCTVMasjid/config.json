@@ -1,10 +1,10 @@
 {
   "ConnectionStrings": {
-    "SqlConn": "Database=ngajidb; Data Source=silpodb.mysql.database.azure.com; User Id=BalittanahAdmin@silpodb; Password=Balit123qweasd!"
+    "SqlConn": "Database=moslemdb; Data Source=silpodb.mysql.database.azure.com; User Id=BalittanahAdmin@silpodb; Password=Balit123qweasd!"
   },
   "App": {
     "Delay": 1000,
-    "ApiUrl": "https://cimanggu.my.id/api/cctv/sendimage",
+    "ApiUrl": "https://moslemtoolkit.my.id/api/cctv/sendimage",
     //"https://cimanggu-online.azurewebsites.net/api/cctv/sendimage",
 
     "CCTVUrls": "http://admin:cctv1234@192.168.1.15/ISAPI/Streaming/channels/101/picture;http://admin:cctv1234@192.168.1.15/ISAPI/Streaming/channels/201/picture"

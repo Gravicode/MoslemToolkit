@@ -41,14 +41,14 @@
                         <div class="form-col">
                             <div class="form-group">
                                 <label>Aktif Dari</label>
-                                <InputDate type="datetime" id="AktifDari" class="form-control" @bind-Value="@TaskObject.AktifDari" />
+                                <InputDate id="AktifDari" class="form-control" @bind-Value="@TaskObject.AktifDari" />
                                 <ValidationMessage For="@(() => TaskObject.AktifDari)" />
                             </div>
                         </div>
                         <div class="form-col">
                             <div class="form-group">
                                 <label>Aktif Sampai</label>
-                                <InputDate type="datetime" id="AktifSampai" class="form-control" @bind-Value="@TaskObject.AktifSampai" />
+                                <InputDate id="AktifSampai" class="form-control" @bind-Value="@TaskObject.AktifSampai" />
                                 <ValidationMessage For="@(() => TaskObject.AktifSampai)" />
                             </div>
                         </div>

@@ -504,7 +504,7 @@ namespace MoslemToolkit.Pages.Qurban
             TotalBeratReport += temp.Value;
             newItem = dt.NewRow();
             newItem[0] = 5;
-            newItem[1] = "Budi Luhur Sekitar Lingkungan Jamaah";
+            newItem[1] = "Pembagian Khusus Sekitar Lingkungan Masjid";
             newItem[2] = temp?.ToString("n2");
             newItem[3] = "Kg";
             dt.Rows.Add(newItem);
@@ -518,7 +518,7 @@ namespace MoslemToolkit.Pages.Qurban
             newItem[3] = "Ekor";
             dt.Rows.Add(newItem);
             var TotalBeratSampil = temp.Value;
-            //budi luhur
+            //pembagian khusus
            
             var jenisBl = DataList.BL.Select(x => x.Jenis.ToString()).Distinct().ToList();
             var i = 0;
@@ -530,7 +530,7 @@ namespace MoslemToolkit.Pages.Qurban
               
                 newItem = dt.NewRow();
                 newItem[0] = 7+i;
-                newItem[1] = $"Budi Luhur {jenis}";
+                newItem[1] = $"Pembagian Khusus {jenis}";
                 newItem[2] = temp?.ToString("n2");
                 newItem[3] = "Kg";
                 dt.Rows.Add(newItem);

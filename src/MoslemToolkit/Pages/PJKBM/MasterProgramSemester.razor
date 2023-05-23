@@ -32,6 +32,7 @@
             <div class="col-sm-11">
                 <select @bind="Tahun">
                     <option value="-1">Pilih</option>
+                    @if(ListTahun!=null)
                     @foreach (var tahun in ListTahun)
                     {
                         <option value=@tahun>@tahun</option>

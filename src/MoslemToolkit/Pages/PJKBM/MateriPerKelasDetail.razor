@@ -96,7 +96,7 @@
         if (TaskObject == null) return;
         var dict = new HashSet<long>();
         var selectedMateri = service.GetDataByKelasId(TaskObject.Id);
-        selectedMateri.ForEach(c => { dict.Add(c.MateriId); });
+        selectedMateri.ForEach(c => { dict.Add(c.MateriId.Value); });
         if (DaftarMateri == null)
         {
 

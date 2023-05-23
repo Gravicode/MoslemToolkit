@@ -1,4 +1,4 @@
-﻿@page "/master/Musyawarah"
+﻿@page "/master/rapat"
 
 @inject IJSRuntime jsRuntime
 @using MoslemToolkit.Models
@@ -10,9 +10,9 @@
 
 
 @using System.IO
-<h1>Hasil Musyawarah Kelompok</h1>
+<h1>Hasil Rapat DKM</h1>
 
-<p>Gunakan halaman ini untuk menyimpan hasil musyawarah kelompok.</p>
+<p>Gunakan halaman ini untuk menyimpan hasil rapat DKM.</p>
 
 @if (DataMusyawarah == null)
 {
@@ -65,7 +65,7 @@ else
 @if (HasLogin)
 {
     <div>
-        <input type="button" data-toggle="modal" data-target="#taskModal" class="btn btn-primary" value="Tambah Musyawarah" @onclick="(() => InitializeitemObject())" />
+        <input type="button" data-toggle="modal" data-target="#taskModal" class="btn btn-primary" value="Tambah Hasil Rapat" @onclick="(() => InitializeitemObject())" />
     </div>
 }
 <ConfirmDialog OnClick="@Delete" />
@@ -164,7 +164,7 @@ else
 
         //itemObject.Id = -1;
 
-        customHeader = "Tambah Hasil Musyawarah";
+        customHeader = "Tambah Hasil Rapat";
     }
     private async void DataChanged()
     {
@@ -174,7 +174,7 @@ else
 
     private void PrepareForEdit(Musyawarah item)
     {
-        customHeader = "Ubah Hasil Musyawarah";
+        customHeader = "Ubah Hasil Rapat";
         itemObject = item;
         //detail.DocumentUrl = item.DocumentUrl;
     }

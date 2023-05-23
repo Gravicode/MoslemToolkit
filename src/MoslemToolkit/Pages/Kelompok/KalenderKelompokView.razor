@@ -10,7 +10,7 @@
 @using System.IO
 <button class="btn btn-primary" @onclick="Cetak">Download</button>
 <div id="@DivContainer" style="background:white">
-<h1>Kalender Kegiatan Kelompok</h1>
+<h1>Kalender Kegiatan Masjid</h1>
 <div class="row">
     <div class="col-4">
         <EventCalendar @ref="calendar"></EventCalendar>
@@ -54,7 +54,7 @@ else
 </div>
 <div class="row">
 <div class="col-12">
-<h4>Jadwal Nasehat</h4>
+<h4>Jadwal Khutbah</h4>
 @if (DataNasehat == null)
 {
     <p><em>Loading...</em></p>
@@ -69,8 +69,8 @@ else
                         <th>Tanggal</th>
                         <th>Topik</th>
 
-                        <th>Penasehat 1</th>
-                        <th>Penasehat 2</th>
+                        <th>Narasumber 1</th>
+                        <th>Narasumber 2</th>
 
 
                     </tr>

@@ -39,10 +39,12 @@
                         <select @bind="@TaskObject.Tujuan" id="tujuan">
                             <option value="-">Pilih</option>
 
-                            <option value="Sodakoh Lemparan">Sodakoh Lemparan</option>
-                            <option value="Isrun">Isrun</option>
+                            <option value="Sodakoh Jumat">Sodakoh Jumat</option>
+                            <option value="Infaq">Infaq</option>
                             <option value="Pembangunan">Pembangunan</option>
                             <option value="Qurban">Qurban</option>
+                            <option value="Bantuan Sosial">Bantuan Sosial</option>
+                            <option value="Wakaf">Wakaf</option>
                             <option value="Lainnya">Lainnya</option>
                         </select>
                         <ValidationMessage For="@(() => TaskObject.Tujuan)" />

@@ -9,9 +9,9 @@
 @inject IToastService toastService
 @inject Blazored.LocalStorage.ILocalStorageService localStorage
 @using System.IO
-<h1>Daftar Aset Sabilillah</h1>
+<h1>Daftar Aset Masjid</h1>
 
-<p>Gunakan halaman ini untuk mengorganisasi aset sabilillah.</p>
+<p>Gunakan halaman ini untuk mengorganisasi aset masjid.</p>
 
 @if (DataAset == null)
 {
@@ -44,7 +44,7 @@ else
                     <td>@item.Lokasi</td>
                     <td>@item.Kondisi</td>
                     <td>@item.CaraPerolehan</td>
-                    <td>@item.TanggalPerolehan.ToString("yyyy-MM-dd")</td>
+                    <td>@item.TanggalPerolehan?.ToString("yyyy-MM-dd")</td>
                     <td>
 
                         <input type="button" class="btn btn-primary" @onclick="(() => PrepareForEdit(item))" data-toggle="modal" data-target="#taskModal" value="Ubah" />

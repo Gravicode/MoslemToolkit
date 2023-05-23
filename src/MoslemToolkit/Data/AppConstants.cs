@@ -22,7 +22,7 @@ namespace MoslemToolkit.Data
         public static string KUInfaqBulananUrl = "";
         public static string ReportQurbanUrl = "";
         public static string SQLConn = "";
-        public static string JamMasjidUrl = "https://jam-masjid.my.id/";
+        public static string JamMasjidUrl = "https://mosque-clock.my.id/";
         public static string BlobConn { get; set; }
         public const string GemLic = "EDWG-SKFA-D7J1-LDQ5";
         public const string NameKey = "Nama";
@@ -87,11 +87,11 @@ namespace MoslemToolkit.Data
         };
         public static List<ProsentaseZakat> PembagianDefault = new List<ProsentaseZakat>()
         {
-            new ProsentaseZakat(){ Id=1, IsAsnab=false, Nama="SB", Persen=0.4 },
-            new ProsentaseZakat(){ Id=2, IsAsnab=false, Nama="Daerah", Persen=0.01 },
-            new ProsentaseZakat(){ Id=3, IsAsnab=false, Nama="Desa", Persen=0.02 },
-            new ProsentaseZakat(){ Id=4, IsAsnab=false, Nama="Kelompok", Persen=0.12 },
-            new ProsentaseZakat(){ Id=5, IsAsnab=true, Nama="Asnab", Persen=0.45 },
+            new ProsentaseZakat(){ Id=1, IsAsnab=false, Nama="Amil", Persen=0.1 },
+            new ProsentaseZakat(){ Id=2, IsAsnab=false, Nama="Penyelenggaraan", Persen=0.05 },
+            new ProsentaseZakat(){ Id=3, IsAsnab=false, Nama="Alat", Persen=0.03 },
+            new ProsentaseZakat(){ Id=4, IsAsnab=false, Nama="Lainnya", Persen=0.02 },
+            new ProsentaseZakat(){ Id=5, IsAsnab=true, Nama="Asnab", Persen=0.8 },
 
         };
 
@@ -108,31 +108,30 @@ namespace MoslemToolkit.Data
         {
             new TargetProgram (){ Nama="Khataman Quran", Skor=100 },
             new TargetProgram (){ Nama="Doa-doa harian", Skor=50 },
-            new TargetProgram (){ Nama="Doa ASAD", Skor=50 },
-            new TargetProgram (){ Nama="Khatam Kitabusolah", Skor=50 },
-            new TargetProgram (){ Nama="Khatam Kanzul Ummal", Skor=50 },
-            new TargetProgram (){ Nama="Khatam Kitab Khutbah", Skor=50 },
-            new TargetProgram (){ Nama="Khatam Kitab Da'wat", Skor=50 },
-            new TargetProgram (){ Nama="Khatam Kitab Adab", Skor=50 },
-            new TargetProgram (){ Nama="Khatam Kitab Jannatilwannar", Skor=50 },
-            new TargetProgram (){ Nama="Khatam Kitab Jihad", Skor=50 },
-            new TargetProgram (){ Nama="Khatam Kitab Shaum", Skor=50 },
-            new TargetProgram (){ Nama="Bersuci dan solat", Skor=50 },
+            new TargetProgram (){ Nama="Doa-doa khusus", Skor=50 },
+            new TargetProgram (){ Nama="Khatam Hadith Tirmizi", Skor=50 },
+            new TargetProgram (){ Nama="Khatam Hadith Bukhori", Skor=50 },
+            new TargetProgram (){ Nama="Khatam Hadith Muslim", Skor=50 },
+            new TargetProgram (){ Nama="Khatam Hadith Nasai", Skor=50 },
+            new TargetProgram (){ Nama="Khatam Hadith Abu Daud", Skor=50 },
+            new TargetProgram (){ Nama="Khatam Tata Cara Sholat", Skor=50 },
+            new TargetProgram (){ Nama="Khatam Tata Cara Bersuci", Skor=50 },
+            new TargetProgram (){ Nama="Khatam Tata Cara Berwudlu", Skor=50 },
+            new TargetProgram (){ Nama="Khatam Hukum Pernikahan", Skor=50 },
             new TargetProgram (){ Nama="Hafalan surat pendek ", Skor=50 },
-            new TargetProgram (){ Nama="Baca tilawati 2 halaman sehari per-halaman dibaca 2 kali", Skor=50 },
+            new TargetProgram (){ Nama="Khatam Hukum Keuangan Syariah", Skor=50 },
         };
         public static string[] Tugas4s = new string[]
     {
-        "KI",
-        "WAKI",
-        "Tim PNKB (Pernikahan)",
-        "Tim KU",
-        "Tim Kematian",
-        "Tim Penerobos",
-        "Tim Aghnia",
-        "MT",
-        "Tim Sabilillah",
-        "Tim Penyelesaian Masalah"
+        "Ketua DKM",
+        "Wakil DKM",
+        "Keuangan",
+        "Sekretaris",
+        "Tim Aset dan Perlengkapan",
+        "Tim Qurban",
+        "Tim Zakat",
+        "Tim Kegiatan Masjid",
+        "Tim Pengajar",
     };
 
 

@@ -141,7 +141,7 @@ namespace MoslemToolkit.Models
         public DateTime AktifDari { get; set; }
         public DateTime AktifSampai { get; set; }
         public bool Berulang { get; set; }
-        public string Hari { get; set; }
+        public string? Hari { get; set; }
     }
 
     public enum TipeCuaca { Cerah, Hujan, Berangin, Panas }
@@ -435,15 +435,15 @@ namespace MoslemToolkit.Models
         public long Id { get; set; }
         public int No { get; set; }
         [ForeignKey("Materi")]
-        public long MateriId { get; set; }
-        public Materi Materi { get; set; }
+        public long? MateriId { get; set; }
+        public Materi? Materi { get; set; }
         [ForeignKey("Kelas")]
-        public long KelasId { get; set; }
-        public Kelas Kelas { get; set; }
+        public long? KelasId { get; set; }
+        public Kelas? Kelas { get; set; }
         public bool IsActive { get; set; }
         public int Semester { get; set; }
         public int Tahun { get; set; }
-        public string Keterangan { get; set; }
+        public string? Keterangan { get; set; }
         public ICollection<NilaiSiswa> NilaiSiswas { get; set; }
         public ICollection<ProgramSemester> ProgramSemesters { get; set; }
 
@@ -645,11 +645,11 @@ namespace MoslemToolkit.Models
         [Key, Column(Order = 0)]
         public long Id { get; set; }
         public DateTime Tanggal { get; set; }
-        public string Nama { get; set; }
-        public string Keterangan { get; set; }
-        public string DocumentUrl { get; set; }
-        public string CreatedBy { get; set; }
-    }
+        public string? Nama { get; set; }
+        public string? Keterangan { get; set; }
+        public string? DocumentUrl { get; set; }
+        public string? CreatedBy { get; set; }
+    }                
     public enum LevelWilayah { Pusat, Daerah, Desa, Kelompok, Lainnya }
     public enum GrupNeraca { Pusat, Daerah, Desa, Kelompok, KesraMubaleg, Masjid, DanaKematian, Lainnya }
     public enum TipeAkunSodakoh { Infaq, Sodakoh, Tabungan, Pembangunan, HajiUmroh, PPG, Sarana, Organisasi, Qurban, KesraMubaleg, Kematian, Lainnya }
@@ -925,9 +925,9 @@ namespace MoslemToolkit.Models
         [Key, Column(Order = 0)]
         public long Id { get; set; }
 
-        public string Kegiatan { get; set; }
+        public string? Kegiatan { get; set; }
 
-        public string Keterangan { get; set; }
+        public string? Keterangan { get; set; }
         public DateTime TanggalMulai { get; set; }
         public DateTime TanggalSelesai { get; set; }
 
@@ -938,7 +938,7 @@ namespace MoslemToolkit.Models
         [Key, Column(Order = 0)]
         public long Id { get; set; }
         public int No { get; set; }
-        public string Nama { get; set; }
+        public string? Nama { get; set; }
         public int Jumlah { get; set; }
         public TipeAsnab TipeAsnab { get; set; }
         public double Beras { get; set; }
@@ -951,8 +951,8 @@ namespace MoslemToolkit.Models
         [Key, Column(Order = 0)]
         public long Id { get; set; }
         public int NoUrut { get; set; }
-        public string KK { get; set; }
-        public string Nama { get; set; }
+        public string? KK { get; set; }
+        public string? Nama { get; set; }
         public PosisiKeluarga Posisi { get; set; }
 
         public bool IsMustahik { get; set; } = true;
@@ -962,7 +962,7 @@ namespace MoslemToolkit.Models
         public double SelisihTitipan { get; set; } = 0;
 
 
-        public string Amil { get; set; }
+        public string? Amil { get; set; }
         public double DanaTalangan { get; set; } = 0;
         public bool SudahZakat { get; set; } = false;
         public bool SudahRealisasi { get; set; } = false;
@@ -1041,26 +1041,26 @@ namespace MoslemToolkit.Models
         public string NamaBarang { get; set; }
 
         [Required]
-        public string Merek { get; set; }
+        public string? Merek { get; set; }
 
         [Required]
-        public string Ukuran { get; set; }
-        public string NoSertifikat { get; set; }
-        public string Lokasi { get; set; }
+        public string? Ukuran { get; set; }
+        public string? NoSertifikat { get; set; }
+        public string? Lokasi { get; set; }
 
         [Required]
         public int Jumlah { get; set; } = 1;
 
-        public string CaraPerolehan { get; set; }
+        public string? CaraPerolehan { get; set; }
 
 
-        public DateTime TanggalPerolehan { get; set; }
+        public DateTime? TanggalPerolehan { get; set; }
 
         [Required]
         public string Kondisi { get; set; }
-        public string Keterangan { get; set; }
+        public string? Keterangan { get; set; }
         [Required]
-        public string CreatedBy { get; set; }
+        public string? CreatedBy { get; set; }
     }
     public enum PosisiKeluarga
     {
@@ -1273,12 +1273,12 @@ namespace MoslemToolkit.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         [Key, Column(Order = 0)]
         public long Id { get; set; }
-        public StatusPernikahan Status { get; set; } = StatusPernikahan.Berkeluarga;
+        public StatusPernikahan? Status { get; set; } = StatusPernikahan.Berkeluarga;
         public string? KK { get; set; }
         public string? Nama { get; set; }
         public string? Ayah { get; set; }
         public string? Ibu { get; set; }
-        public PosisiKeluarga Posisi { get; set; } = PosisiKeluarga.KK;
+        public PosisiKeluarga? Posisi { get; set; } = PosisiKeluarga.KK;
         public string? PhotoUrl { get; set; }
         public string? Gol { get; set; }
         public char? Kelamin { get; set; }
@@ -1297,7 +1297,7 @@ namespace MoslemToolkit.Models
 
         [ForeignKey("Kelas")]
         public long? KelasId { get; set; }
-        public Kelas Kelas { get; set; }
+        public Kelas? Kelas { get; set; }
         public ICollection<SiswaPerKelas> KelasSiswa { get; set; }
         public long? FatherId { get; set; }
         public long? MotherId { get; set; }
@@ -1313,8 +1313,8 @@ namespace MoslemToolkit.Models
         [Required]
         public string Nama { get; set; }
 
-        public string Alamat { get; set; }
-        public string Telepon { get; set; }
+        public string? Alamat { get; set; }
+        public string? Telepon { get; set; }
         public int Urutan { get; set; }
     }
     public class Musyawarah
@@ -1324,9 +1324,9 @@ namespace MoslemToolkit.Models
         public long Id { get; set; }
         public DateTime Tanggal { get; set; }
         public string Topik { get; set; }
-        public string Keterangan { get; set; }
+        public string? Keterangan { get; set; }
         public string DocumentUrl { get; set; }
-        public string CreatedBy { get; set; }
+        public string? CreatedBy { get; set; }
     }
     public class BuktiTransfer
     {
@@ -1389,10 +1389,10 @@ namespace MoslemToolkit.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         [Key, Column(Order = 0)]
         public long Id { get; set; }
-        public string Nama { get; set; }
-        public string Keterangan { get; set; }
+        public string? Nama { get; set; }
+        public string? Keterangan { get; set; }
         public DateTime Tanggal { get; set; }
-        public string EmbedHTML { get; set; }
+        public string? EmbedHTML { get; set; }
 
     }
     public class Ngaji
@@ -1484,15 +1484,15 @@ namespace MoslemToolkit.Models
         public long Id { set; get; }
 
         public int No { set; get; }
-        public string Pemilik { set; get; }
+        public string? Pemilik { set; get; }
         public double Bruto { set; get; }
         public double Netto { set; get; }
         public double PersenNet { set; get; }
-        public string KepalaSapi { set; get; }
+        public string? KepalaSapi { set; get; }
         public int Tahun { set; get; }
         public int? NoUrutPotong { set; get; } = 0;
         public JenisHewanQurban Jenis { get; set; } = JenisHewanQurban.Sapi;
-        public string Keterangan { get; set; }
+        public string? Keterangan { get; set; }
 
         public ICollection<DataPembagian> DataPembagians { get; set; }
 
@@ -1516,11 +1516,11 @@ namespace MoslemToolkit.Models
         public long Id { set; get; }
 
         public int Urut { set; get; }
-        public string Nama { set; get; }
+        public string? Nama { set; get; }
         public double BERAT { set; get; }
         public double BUNGKUS { set; get; }
-        public string KP { set; get; }
-        public string KETERANGAN { set; get; }
+        public string? KP { set; get; }
+        public string? KETERANGAN { set; get; }
         public int Tahun { set; get; }
         public TipeBL Jenis { set; get; } = TipeBL.Lainnya;
         public bool SudahSiap { get; set; }
@@ -1535,11 +1535,11 @@ namespace MoslemToolkit.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         [Key, Column(Order = 0)]
         public long Id { set; get; }
-        public string KK { set; get; }
-        public string Nama { set; get; }
-        public string Status { set; get; }
-        public string Golongan { set; get; }
-        public string KP { set; get; }
+        public string? KK { set; get; }
+        public string? Nama { set; get; }
+        public string? Status { set; get; }
+        public string? Golongan { set; get; }
+        public string? KP { set; get; }
         public double Pembagian { set; get; }
         public double BL { set; get; }
         public double KAKI { set; get; }
@@ -1549,13 +1549,13 @@ namespace MoslemToolkit.Models
         public double APRESIASI { set; get; }
         public int Tahun { set; get; }
         public int NoUrut { set; get; }
-        public string Kantong { set; get; }
+        public string? Kantong { set; get; }
         public bool SudahSiap { get; set; }
         public bool SudahDiterima { get; set; }
 
-        public string Sapi { get; set; }
+        public string? Sapi { get; set; }
 
-        public HewanQurban HewanQurban { get; set; }
+        public HewanQurban? HewanQurban { get; set; }
 
     }
 

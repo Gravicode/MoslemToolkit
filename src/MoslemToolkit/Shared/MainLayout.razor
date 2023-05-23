@@ -24,7 +24,7 @@
         <li class="nav-item active">
             <a class="nav-link" href="/index/pjkbm">
                 <i class="fas fa-fw fa-tachometer-alt"></i>
-                <span>PJKBM</span>
+                <span>Sekolah</span>
             </a>
         </li>
 
@@ -202,10 +202,17 @@
                 </ul>
 
             </nav>
-            <!-- End of Topbar -->
-            <!-- Begin Page Content -->
             <div class="container-fluid">
-                @Body
+                <!-- End of Topbar -->
+                <!-- Begin Page Content -->
+                <ErrorBoundary @ref="errorBoundary">
+                    <ChildContent>
+                        @Body
+                    </ChildContent>
+                    <ErrorContent>
+                        <p class="errorUI">Nothing to see here right now. Sorry!</p>
+                    </ErrorContent>
+                </ErrorBoundary>
             </div>
             <!-- /.container-fluid -->
 
@@ -258,6 +265,12 @@
                 ErrorIcon="fa fa-bug" />
 
 @code {
+    private ErrorBoundary? errorBoundary;
+
+    protected override void OnParametersSet()
+    {
+        errorBoundary?.Recover();
+    }
     async Task Keluar()
     {
         await localStorage.SetItemAsync(AppConstants.NameKey, "");

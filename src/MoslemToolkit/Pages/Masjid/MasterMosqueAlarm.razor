@@ -43,7 +43,7 @@ else
                     <tr>
                         <td>@item.Judul</td>
                         <td>@item.AlarmId</td>
-                        <td>@item.Waktu</td>
+                        <td>@item.Waktu.ToString()</td>
                         <td>@item.AktifDari.ToString("dd/MMM/yyyy HH:mm") - @item.AktifSampai.ToString("dd/MMM/yyyy HH:mm")</td>
                         <td>@(item.Berulang?"Ya":"Tidak")</td>
                         <td>

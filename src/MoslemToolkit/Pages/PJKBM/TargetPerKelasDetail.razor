@@ -99,7 +99,7 @@
         {
             //jika buat baru, copy dari data materi per kelas
             var copyMateri = MateriPerKelasSvc.GetDataByKelasId(TaskObject.Id);
-            copyMateri.ForEach(c => { dict.Add(c.MateriId); });
+            copyMateri.ForEach(c => { dict.Add(c.MateriId.Value); });
         }
         else
         {

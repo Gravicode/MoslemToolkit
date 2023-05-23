@@ -10,9 +10,9 @@
 
 
 @using System.IO
-<h1>Data Tim 4S</h1>
+<h1>Data Pengurus DKM</h1>
 
-<p>Gunakan halaman ini untuk menyimpan data Tim 4S.</p>
+<p>Gunakan halaman ini untuk menyimpan data pengurus DKM.</p>
 
 @if (DataTim == null)
 {
@@ -63,7 +63,7 @@ else
 @if (HasLogin)
 {
     <div>
-        <input type="button" data-toggle="modal" data-target="#taskModal" class="btn btn-primary" value="Tambah Tim" @onclick="(() => InitializeitemObject())" />
+        <input type="button" data-toggle="modal" data-target="#taskModal" class="btn btn-primary" value="Tambah Pengurus" @onclick="(() => InitializeitemObject())" />
     </div>
 }
 <ConfirmDialog OnClick="@Delete" />
@@ -135,7 +135,7 @@ else
 
         //itemObject.Id = -1;
 
-        customHeader = "Tambah Tim 4S";
+        customHeader = "Tambah Pengurus";
     }
     private async void DataChanged()
     {
@@ -145,7 +145,7 @@ else
 
     private void PrepareForEdit(Tim item)
     {
-        customHeader = "Ubah Data Tim 4S";
+        customHeader = "Ubah Data Pengurus";
         itemObject = item;
         //detail.DocumentUrl = item.DocumentUrl;
     }

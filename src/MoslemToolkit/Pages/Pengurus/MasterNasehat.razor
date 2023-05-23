@@ -8,9 +8,9 @@
 @inject IToastService toastService
 @inject Blazored.LocalStorage.ILocalStorageService localStorage
 @using System.IO
-<h1>Daftar Penasehat</h1>
+<h1>Daftar Khutbah</h1>
 
-<p>Gunakan halaman ini untuk menyimpan daftar penasehat.</p>
+<p>Gunakan halaman ini untuk menyimpan daftar khutbah.</p>
 
 @if (DataNasehat == null)
 {
@@ -25,8 +25,8 @@ else
                     <tr>
                         <th>Tanggal</th>
                         <th>Topik</th>
-                        <th>Penasehat 1</th>
-                        <th>Penasehat 2</th>
+                        <th>Narasumber 1</th>
+                        <th>Narasumber 2</th>
 
                         <th>Actions</th>
                     </tr>
@@ -57,7 +57,7 @@ else
     </body>
 }
 <div>
-    <input type="button" data-toggle="modal" data-target="#taskModal" class="btn btn-primary" value="Tambah Nasehat" @onclick="(() => InitializeitemObject())" />
+    <input type="button" data-toggle="modal" data-target="#taskModal" class="btn btn-primary" value="Tambah Khutbah" @onclick="(() => InitializeitemObject())" />
 </div>
 <ConfirmDialog OnClick="@Delete" />
 <NasehatDetail @ref="detail" TaskObject=@itemObject DataChanged="@DataChanged">
@@ -126,7 +126,7 @@ else
 
         //itemObject.Id = -1;
 
-        customHeader = "Tambah Nasehat";
+        customHeader = "Tambah Khutbah";
     }
     private async void DataChanged()
     {
@@ -136,7 +136,7 @@ else
 
     private void PrepareForEdit(Nasehat item)
     {
-        customHeader = "Ubah Nasehat";
+        customHeader = "Ubah Khutbah";
         itemObject = item;
 
     }

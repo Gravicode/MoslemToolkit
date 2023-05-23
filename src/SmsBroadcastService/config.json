@@ -1,6 +1,6 @@
 {
   "ConnectionStrings": {
-    "SqlConn": "Database=ngajidb; Data Source=silpodb.mysql.database.azure.com; User Id=BalittanahAdmin@silpodb; Password=Balit123qweasd!"
+    "SqlConn": "Database=moslemdb; Data Source=silpodb.mysql.database.azure.com; User Id=BalittanahAdmin@silpodb; Password=Balit123qweasd!"
   },
   "App": {
     "Delay": 30000,

@@ -261,9 +261,9 @@ namespace MoslemToolkit.Data
                 await Task.Delay(1);
                 #endregion
 
-                #region Data BL
+                #region Data Pembagian Khusus
                 var data_bl = @"<br/>
-                 <h2>Data Budi Luhur</h2>
+                 <h2>Data Pembagian Khusus</h2>
     <div class=""row"">
 
         <div class=""table-responsive"">
@@ -340,7 +340,7 @@ namespace MoslemToolkit.Data
     </div>
     <hr />";
                 content.AppendLine(data_bl);
-                StatusChanged?.Invoke(this, new StatusChangedEventArgs() { Progress = 60, Message = "Data BL selesai..." });
+                StatusChanged?.Invoke(this, new StatusChangedEventArgs() { Progress = 60, Message = "Data Pembagian Khusus selesai..." });
                 await Task.Delay(1);
                 #endregion
 

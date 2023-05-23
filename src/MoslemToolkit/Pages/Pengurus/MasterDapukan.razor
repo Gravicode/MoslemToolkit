@@ -1,4 +1,4 @@
-﻿@page "/master/Dapukan"
+﻿@page "/master/pengurus"
 
 @inject IJSRuntime jsRuntime
 @using MoslemToolkit.Models
@@ -8,9 +8,9 @@
 @inject IToastService toastService
 @inject Blazored.LocalStorage.ILocalStorageService localStorage
 @using System.IO
-<h1>Daftar Dapukan 4s</h1>
+<h1>Daftar Pengurus DKM</h1>
 
-<p>Gunakan halaman ini untuk mengatur dapukan.</p>
+<p>Gunakan halaman ini untuk mengatur pengurus DKM.</p>
 
 @if (DataDapukan == null)
 {
@@ -56,7 +56,7 @@ else
     </body>
 }
 <div>
-    <input type="button" data-toggle="modal" data-target="#taskModal" class="btn btn-primary" value="Tambah Dapukan" @onclick="(() => InitializeitemObject())" />
+    <input type="button" data-toggle="modal" data-target="#taskModal" class="btn btn-primary" value="Tambah Pengurus" @onclick="(() => InitializeitemObject())" />
 </div>
 <ConfirmDialog OnClick="@Delete" />
 <DapukanDetail @ref="detail" TaskObject=@itemObject DataChanged="@DataChanged">
@@ -124,7 +124,7 @@ else
 
         //itemObject.Id = -1;
 
-        customHeader = "Tambah Dapukan";
+        customHeader = "Tambah Jabatan Pengurus";
     }
     private async void DataChanged()
     {
@@ -134,7 +134,7 @@ else
 
     private void PrepareForEdit(Dapukan item)
     {
-        customHeader = "Ubah Dapukan";
+        customHeader = "Ubah Jabatan Pengurus";
         itemObject = item;
 
     }

@@ -93,7 +93,7 @@ namespace MoslemToolkit.Data
             materis.ForEach(x => { materihash.Add(x.Id); });
             //remove all data
             var removed = from x in db.MateriPerKelass.Include(x=>x.NilaiSiswas)
-                          where x.KelasId == kelas.Id && !materihash.Contains(x.MateriId)
+                          where x.KelasId == kelas.Id && !materihash.Contains(x.MateriId.Value)
                           select x;
             foreach (var item in removed)
             {
@@ -115,7 +115,7 @@ namespace MoslemToolkit.Data
                 materis.ForEach(x => { materihash.Add(x.Id); });
                 //remove all data
                 var removed = from x in db.MateriPerKelass
-                               where x.KelasId == kelas.Id && !materihash.Contains(x.MateriId)
+                               where x.KelasId == kelas.Id && !materihash.Contains(x.MateriId.Value)
                                select x;
                 foreach (var item in removed)
                 {
@@ -124,11 +124,11 @@ namespace MoslemToolkit.Data
                 db.SaveChanges();
                 //add data
                 var exists = (from x in db.MateriPerKelass
-                              where x.KelasId == kelas.Id && materihash.Contains(x.MateriId)
+                              where x.KelasId == kelas.Id && materihash.Contains(x.MateriId.Value)
                               select x).ToList();
                 var materiexist = new HashSet<long>();
                 int counter = 1;
-                exists.ForEach(x => { materiexist.Add(x.MateriId);x.No = counter++; });
+                exists.ForEach(x => { materiexist.Add(x.MateriId.Value);x.No = counter++; });
                 foreach(var mat in materis)
                 {
                     if (!materiexist.Contains(mat.Id))

@@ -27,7 +27,7 @@
 
                     <div class="form-group">
                         <label for="nourut">No Urut</label>
-                        <InputDate id="nourut" class="form-control" @bind-Value="@TaskObject.No" />
+                        <InputNumber id="nourut" class="form-control" @bind-Value="@TaskObject.No" />
                         <ValidationMessage For="@(() => TaskObject.No)" />
                     </div>
 

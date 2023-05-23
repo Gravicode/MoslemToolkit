@@ -11,7 +11,18 @@
 
             <div class="card o-hidden border-0 shadow-lg my-5">
                 <div class="card-body p-0">
-                    @Body
+
+                    <!-- End of Topbar -->
+                    <!-- Begin Page Content -->
+                    <ErrorBoundary @ref="errorBoundary">
+                        <ChildContent>
+                            @Body
+                        </ChildContent>
+                        <ErrorContent>
+                            <p class="errorUI">Nothing to see here right now. Sorry!</p>
+                        </ErrorContent>
+                    </ErrorBoundary>
+
 
                 </div>
             </div>
@@ -28,4 +39,12 @@
                     ErrorIcon="fa fa-bug" />
 </div>
 
-  
+
+@code {
+    private ErrorBoundary? errorBoundary;
+
+    protected override void OnParametersSet()
+    {
+        errorBoundary?.Recover();
+    }
+}
