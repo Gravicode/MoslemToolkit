@@ -112,7 +112,7 @@ else
                 }
                 if (string.IsNullOrEmpty(UserName))
                 {
-                    NavMgr.NavigateTo($"/login");
+                    NavMgr.NavigateTo($"/auth/login");
                 }
                 else
                 {
@@ -120,7 +120,7 @@ else
                 }
             }
             {
-                        HasLogin = RoleInfo.HasRole(UserName, Roles.Pengurus) || RoleInfo.HasRole(UserName, Roles.PJKBM);
+                        HasLogin = RoleInfo.HasRole(UserName, Roles.Pengurus) || RoleInfo.HasRole(UserName, Roles.Pengajar);
                         if (HasLogin)
                 StateHasChanged();
             }

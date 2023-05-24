@@ -100,11 +100,11 @@ else
                 }
                 if (string.IsNullOrEmpty(UserName))
                 {
-                    NavMgr.NavigateTo($"/login");
+                    NavMgr.NavigateTo($"/auth/login");
                 }
                 else
                 {
-                    if (UserName == AppConstants.USER_ADMIN)
+                    if (RoleInfo.HasRole(UserName,Roles.Admin))
                     {
                         HasLogin = true;
                         StateHasChanged();

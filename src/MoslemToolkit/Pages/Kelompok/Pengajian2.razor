@@ -152,7 +152,7 @@ else
     async Task Keluar()
     {
         await localStorage.SetItemAsync(AppConstants.NameKey, "");
-        NavMgr.NavigateTo($"/login");
+        NavMgr.NavigateTo($"/auth/login");
     }
     void Kembali()
     {
@@ -182,7 +182,7 @@ else
                 }
                 if (string.IsNullOrEmpty(UserName))
                 {
-                    NavMgr.NavigateTo($"/login");
+                    NavMgr.NavigateTo($"/auth/login");
                 }
                 else
                 {

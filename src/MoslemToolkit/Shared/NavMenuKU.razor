@@ -1,6 +1,6 @@
 ﻿@inject Blazored.LocalStorage.ILocalStorageService localStorage
 @inject IJSRuntime jsRuntime
-
+@inject RoleService RoleSvc
 <li class="nav-item">
     <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#menu1"
        aria-expanded="true" aria-controls="menu1">
@@ -112,33 +112,25 @@
     {
         collapseNavMenu = !collapseNavMenu;
     }
+    Roles MyRole;
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-
+        var user = (await authenticationStateTask).User;
+        UserName = user.Identity.Name;
+        MyRole = RoleSvc.GetRole(UserName);
+        if ( MyRole == Roles.Keuangan)
+        {
+            HasLogin = true;
+            StateHasChanged();
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
-        {
-            try
-            {
-                UserName = await localStorage.GetItemAsync<string>(AppConstants.NameKey);
-
-            }
-            catch
-            {
-
-            }
-
-            if (!string.IsNullOrEmpty(UserName) && UserName == AppConstants.USER_KU)
-            {
-                HasLogin = true;
-                StateHasChanged();
-            }
-
-        }
+       
 
         //await jsRuntime.InvokeAsync<object>("setMenuStyle");
     }

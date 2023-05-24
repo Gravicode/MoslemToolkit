@@ -1,5 +1,6 @@
 ﻿@inject Blazored.LocalStorage.ILocalStorageService localStorage
 @inject IJSRuntime jsRuntime
+@inject RoleService RoleSvc
 <!-- Nav Item - Pages Collapse Menu -->
 <li class="nav-item">
     <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
@@ -89,6 +90,7 @@
          data-parent="#accordionSidebar">
             <div class="bg-white py-2 collapse-inner rounded">
                 <h6 class="collapse-header">Pilih:</h6>
+                <a class="collapse-item" href="/master/UserProfile">Master User</a>
                 <a class="collapse-item" href="/master-Ngaji">Master Acara</a>
                 <a class="collapse-item" href="/master/nasehat">Daftar Khutbah</a>
                 <a class="collapse-item" href="/master/pengurus">Master Pengurus DKM</a>
@@ -133,7 +135,7 @@
             </div>
         </div>
     </li>
-    @if (UserName == AppConstants.USER_KU)
+    @if (MyRole == Roles.Keuangan)
     {
         <li class="nav-item">
             <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#menu6"
@@ -171,6 +173,7 @@
 }
 
 @code {
+    Roles MyRole = Roles.User;
     bool collapseNavMenu = true;
     bool HasLogin = true;
     string NavMenuCssClass => (collapseNavMenu ? "collapse" : "");
@@ -180,42 +183,29 @@
         collapseNavMenu = !collapseNavMenu;
     }
 
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
-
+        var user = (await authenticationStateTask).User;
+        UserName = user.Identity.Name;
+        MyRole = RoleSvc.GetRole(UserName);
+        if (MyRole == Roles.Admin || MyRole == Roles.Keuangan)
+        {
+            HasLogin = true;
+            StateHasChanged();
+        }
+        else
+        {
+            HasLogin = false;
+            StateHasChanged();
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
-        {
-            try
-            {
-                UserName = await localStorage.GetItemAsync<string>(AppConstants.NameKey);
-
-            }
-            catch
-            {
-
-            }
-
-            if (UserName == AppConstants.USER_ADMIN)
-            {
-                HasLogin = true;
-
-            }
-            else if (UserName == AppConstants.USER_KU)
-            {
-                HasLogin = true;
-                StateHasChanged();
-            }
-            else
-            {
-                HasLogin = false;
-                StateHasChanged();
-            }
-
-        }
+       
 
         //await jsRuntime.InvokeAsync<object>("setMenuStyle");
     }

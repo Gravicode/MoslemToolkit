@@ -4,10 +4,63 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Serialization;
 using System.Threading.Tasks;
 
 namespace MoslemToolkit.Models
 {
+    #region common
+    [DataContract]
+    public class InputCls
+    {
+        [DataMember(Order = 1)]
+        public string[] Param { get; set; }
+        [DataMember(Order = 2)]
+        public Type[] ParamType { get; set; }
+    }
+    [DataContract]
+    public class OutputCls
+    {
+        [DataMember(Order = 1)]
+        public bool Result { get; set; }
+        [DataMember(Order = 2)]
+        public string Message { get; set; }
+        [DataMember(Order = 3)]
+        public string Data { get; set; }
+    }
+    [DataContract]
+    public class UserProfile
+    {
+        [DataMember(Order = 1)]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        [Key, Column(Order = 0)]
+        public long Id { get; set; }
+        [DataMember(Order = 2)]
+        public string Username { get; set; }
+        [DataMember(Order = 3)]
+        public string Password { get; set; }
+        [DataMember(Order = 4)]
+        public string FullName { get; set; }
+        [DataMember(Order = 5)]
+        public string? Phone { get; set; }
+        [DataMember(Order = 6)]
+        public string? Email { get; set; }
+        [DataMember(Order = 7)]
+        public string? Alamat { get; set; }
+        [DataMember(Order = 8)]
+        public string? KTP { get; set; }
+        [DataMember(Order = 9)]
+        public string? PicUrl { get; set; }
+        [DataMember(Order = 10)]
+        public bool Aktif { get; set; } = true;
+
+        [DataMember(Order = 11)]
+        public Roles Role { set; get; } = Roles.User;
+
+    }
+
+    public enum Roles { Admin, User, Pengurus, Keuangan, Pengajar }
+    #endregion
     #region mosque 
     public class MosqueAlarmData
     {

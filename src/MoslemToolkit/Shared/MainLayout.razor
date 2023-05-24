@@ -4,6 +4,7 @@
 @inject NavigationManager NavMgr
 @inject IJSRuntime jsRuntime
 <PageTitle>Moslem Toolkit 1.0</PageTitle>
+<AuthControl></AuthControl>
 <!-- Page Wrapper -->
 <div id="wrapper">
     <!-- Sidebar -->
@@ -179,7 +180,7 @@
                         <!-- Dropdown - User Information -->
                         <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
                              aria-labelledby="userDropdown">
-                            <a class="dropdown-item" href="#">
+                            <a class="dropdown-item" href="/auth/user-profile">
                                 <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-400"></i>
                                 Profil
                             </a>
@@ -261,8 +262,8 @@
 <BlazoredToasts Position="ToastPosition.BottomRight"
                 Timeout="10"
                 SuccessClass="success-toast-override"
-                SuccessIcon="fa fa-thumbs-up"
-                ErrorIcon="fa fa-bug" />
+                SuccessIconClass="fa fa-thumbs-up"
+                ErrorIconClass="fa fa-bug" />
 
 @code {
     private ErrorBoundary? errorBoundary;
@@ -274,7 +275,7 @@
     async Task Keluar()
     {
         await localStorage.SetItemAsync(AppConstants.NameKey, "");
-        NavMgr.NavigateTo($"/login");
+        NavMgr.NavigateTo($"/logout",true);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

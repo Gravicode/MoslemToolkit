@@ -7,6 +7,7 @@ namespace MoslemToolkit.Data
 {
     public class AppConstants
     {
+        public static string DefaultPass = "123qweasd";
         public static string JamMasjidImagePrefix = "";
         public static string UploadUrlPrefix = "https://storagemurahaje.blob.core.windows.net/ngaji-online";
         public const int FACE_WIDTH = 180;
@@ -49,9 +50,9 @@ namespace MoslemToolkit.Data
 
         public static string SCORE_DATA;
 
-        public static string USER_ADMIN = "admin";
-        public static string USER_PJKBM = "pengajar";
-        public static string USER_KU = "keuangan";
+        //public static string USER_ADMIN = "admin";
+        //public static string USER_PJKBM = "pengajar";
+        //public static string USER_KU = "keuangan";
 
         public static string[] KategoriCashflowQurban = new string[]
   {

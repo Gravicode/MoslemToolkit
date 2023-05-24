@@ -18,6 +18,7 @@ namespace MoslemToolkit.Data
             : base(options)
         {
         }
+        public DbSet<UserProfile> UserProfiles { get; set; }
         public DbSet<TargetPerKelas> TargetPerKelass { get; set; }
         public DbSet<SiswaPerKelas> SiswaPerKelass { get; set; }
         public DbSet<CashflowQurban> CashflowQurbans { get; set; }

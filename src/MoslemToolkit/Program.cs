@@ -6,11 +6,11 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.StaticFiles;
 using MoslemToolkit.Data;
 using MoslemToolkit.Tools;
-using MoslemToolkit.Data;
 using ServiceStack.Text;
 using System.Net;
 using System.Text;
 using Blazored.Toast;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace MoslemToolkit
 {
@@ -35,6 +35,16 @@ namespace MoslemToolkit
            
             services.AddRazorPages();
             services.AddServerSideBlazor();
+            // BLAZOR COOKIE Auth Code (begin)
+            builder.Services.Configure<CookiePolicyOptions>(options =>
+            {
+                options.CheckConsentNeeded = context => true;
+                options.MinimumSameSitePolicy = SameSiteMode.None;
+            });
+            builder.Services.AddAuthentication(
+                CookieAuthenticationDefaults.AuthenticationScheme)
+                .AddCookie();
+            // BLAZOR COOKIE Auth Code (end)
             services.AddSingleton<TempStorageService>();
             services.AddSingleton<NgajiService>();
             services.AddSingleton<AbsensiService>();
@@ -45,8 +55,11 @@ namespace MoslemToolkit
             services.AddTransient<SiswaPerKelasService>();
             services.AddTransient<TargetPerKelasService>();
             services.AddTransient<MateriPerKelasService>();
+            services.AddTransient<UserProfileService>();
+            services.AddTransient<RoleService>();
 
-
+            services.AddBlazoredLocalStorage();
+            services.AddBlazoredToast();
 
             AppConstants.SQLConn = Configuration["ConnectionStrings:SqlConn"];
             AppConstants.RedisCon = Configuration["RedisCon"];
@@ -65,8 +78,7 @@ namespace MoslemToolkit
             AppConstants.ReportKPI = (Configuration["App:ReportKPI"]);
             AppConstants.LaporanZakatFitrah = (Configuration["App:LaporanZakatFitrah"]);
             AppConstants.HargaJualBeras = int.Parse(Configuration["App:HargaJualBeras"]);
-            services.AddBlazoredLocalStorage();
-            services.AddBlazoredToast();
+           
 
             MailService.MailUser = Configuration["MailSettings:MailUser"];
             MailService.MailPassword = Configuration["MailSettings:MailPassword"];
@@ -195,6 +207,13 @@ namespace MoslemToolkit
             app.UseStaticFiles();
 
             app.UseRouting();
+            // ******
+            // BLAZOR COOKIE Auth Code (begin)
+            app.UseCookiePolicy();
+            app.UseAuthentication();
+            app.UseAuthorization();
+            // BLAZOR COOKIE Auth Code (end)
+            // ******
             app.UseCors(x => x
            .AllowAnyMethod()
            .AllowAnyHeader()
